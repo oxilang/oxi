@@ -13,7 +13,7 @@ inkwell = { version = "0.8.0", features = ["llvm21-1"] }
 clap = { version = "4.5.54", features = ["derive"] }
 parking_lot = "0.12.5"
 clang = { version = "2.0.0", features = ["clang_10_0", "runtime"] }
-rand = "0.8.5"
+rand = "0.9.3"
 thin-vec = "0.2.16"
 
 [dev-dependencies]

@@ -1,0 +1,23 @@
+struct S {}
+
+trait A<T> {
+    type Assoc;
+}
+
+impl A::<i8> for S {
+    type Assoc = i8;
+}
+
+impl A::<u8> for S {
+    type Assoc = u8;
+}
+
+fn main() void {
+    let x_i8: <S as A::<i8> >::Assoc = 12;
+    let x_u8: <S as A::<u8> >::Assoc = 12;
+    consume_i8(x_i8);
+    consume_u8(x_u8);
+}
+
+fn consume_i8(x: i8) void {}
+fn consume_u8(x: u8) void {}

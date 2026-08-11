@@ -1,0 +1,14 @@
+// @expect-error type_mismatch
+
+struct Pair<T, U> {
+    first: T,
+    second: U,
+}
+
+type PairAlias<T = i64, U = T> = Pair::<T, U>;
+
+pub fn main() void {
+    // `PairAlias::<u32>` completes `U = T` to `u32`, so `second` must not be `i64`.
+    let p = PairAlias::<u32> { first: 12, second: 24 };
+    let second: i64 = p.second;
+}

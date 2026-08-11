@@ -1,0 +1,5 @@
+// @expect-error recursive_type
+
+struct Bar<T> {}
+
+type Baz = Bar::<Baz>;

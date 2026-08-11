@@ -225,9 +225,9 @@ pub fn parse_struct_instantiation_expr(
     left: Expr,
     _bp: BindingPower,
 ) -> Result<Expr> {
-    let struct_path = match &left.kind {
-        ExprKind::Path(path) => path.clone(),
-        _ => bail!("Expected symbol for struct instantiation"),
+    let struct_path = match left.kind {
+        ExprKind::Path(path) => path,
+        _ => bail!("Expected path for struct instantiation"),
     };
 
     parser.expect(TokenKind::OpenCurly)?;

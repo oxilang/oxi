@@ -1,0 +1,11 @@
+// @expect-error recursive_type
+
+struct Foo {
+    type A = Self::B;
+    type B = Self::A;
+}
+
+pub fn main() void {
+    let a: Foo::A;
+    let b: Foo::B;
+}

@@ -93,7 +93,7 @@ impl<'ctx> Parser<'ctx> {
                 self.ctx,
                 token.span,
                 token.module_id,
-                diag::UnexpectedToken,
+                diag::ExpectedToken,
                 diag_params! { expected = expected_kind, actual = token.kind },
             );
             unreachable!();

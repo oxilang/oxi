@@ -8,7 +8,7 @@ use fxhash::FxHashMap;
 pub enum VisitAction {
     /// Descend into children
     Continue,
-    /// Don't descend
+    /// Don't descend into children
     SkipChildren,
 }
 
@@ -143,17 +143,31 @@ impl<K: Eq + Hash, V: Visitable> Visitable for FxHashMap<K, V> {
     }
 }
 
+impl Visitable for Path {
+    fn visit(&self, visitor: &mut impl Visitor) {
+        self.segments.visit(visitor);
+    }
+    fn visit_mut(&mut self, visitor: &mut impl VisitorMut) {
+        self.segments.visit_mut(visitor);
+    }
+}
+
+impl Visitable for PathSegment {
+    fn visit(&self, visitor: &mut impl Visitor) {
+        self.generic_args.visit(visitor);
+    }
+    fn visit_mut(&mut self, visitor: &mut impl VisitorMut) {
+        self.generic_args.visit_mut(visitor);
+    }
+}
+
 impl Visitable for Ast {
     fn visit(&self, visitor: &mut impl Visitor) {
-        for item in &self.items {
-            item.visit(visitor);
-        }
+        self.items.visit(visitor);
     }
 
     fn visit_mut(&mut self, visitor: &mut impl VisitorMut) {
-        for item in &mut self.items {
-            item.visit_mut(visitor);
-        }
+        self.items.visit_mut(visitor);
     }
 }
 
@@ -171,22 +185,26 @@ impl Visitable for Item {
                     generic_params,
                     ..
                 } => {
-                    if let Some(params) = generic_params {
-                        params.visit(visitor);
-                    }
+                    generic_params.visit(visitor);
                     for field in fields {
                         field.1.visit(visitor);
                     }
                     items.visit(visitor);
+                }
+                ItemKind::Type {
+                    generic_params,
+                    type_,
+                    ..
+                } => {
+                    generic_params.visit(visitor);
+                    type_.visit(visitor);
                 }
                 ItemKind::Trait {
                     items,
                     generic_params,
                     ..
                 } => {
-                    if let Some(params) = generic_params {
-                        params.visit(visitor);
-                    }
+                    generic_params.visit(visitor);
                     items.visit(visitor);
                 }
                 ItemKind::Impl {
@@ -194,23 +212,15 @@ impl Visitable for Item {
                     trait_,
                     items,
                 } => {
-                    for segment in &self_ty.0.segments {
-                        segment.generic_args.visit(visitor);
-                    }
-                    for segment in &trait_.0.segments {
-                        segment.generic_args.visit(visitor);
-                    }
+                    self_ty.0.visit(visitor);
+                    trait_.0.visit(visitor);
                     items.visit(visitor);
                 }
                 ItemKind::Fn(f) => f.visit(visitor),
-                ItemKind::Import(_) => {
-                    // Leaf
-                }
                 ItemKind::Module { body, .. } => {
-                    if let Some(items) = body {
-                        items.visit(visitor);
-                    }
+                    body.visit(visitor);
                 }
+                ItemKind::Import(_) => {}
             },
             VisitAction::SkipChildren => {}
         }
@@ -229,22 +239,26 @@ impl Visitable for Item {
                     generic_params,
                     ..
                 } => {
-                    if let Some(params) = generic_params {
-                        params.visit_mut(visitor);
-                    }
+                    generic_params.visit_mut(visitor);
                     for field in fields {
                         field.1.visit_mut(visitor);
                     }
                     items.visit_mut(visitor);
+                }
+                ItemKind::Type {
+                    generic_params,
+                    type_,
+                    ..
+                } => {
+                    generic_params.visit_mut(visitor);
+                    type_.visit_mut(visitor);
                 }
                 ItemKind::Trait {
                     items,
                     generic_params,
                     ..
                 } => {
-                    if let Some(params) = generic_params {
-                        params.visit_mut(visitor);
-                    }
+                    generic_params.visit_mut(visitor);
                     items.visit_mut(visitor);
                 }
                 ItemKind::Impl {
@@ -252,23 +266,15 @@ impl Visitable for Item {
                     trait_,
                     items,
                 } => {
-                    for segment in &mut self_ty.0.segments {
-                        segment.generic_args.visit_mut(visitor);
-                    }
-                    for segment in &mut trait_.0.segments {
-                        segment.generic_args.visit_mut(visitor);
-                    }
+                    self_ty.0.visit_mut(visitor);
+                    trait_.0.visit_mut(visitor);
                     items.visit_mut(visitor);
                 }
                 ItemKind::Fn(f) => f.visit_mut(visitor),
-                ItemKind::Import(_) => {
-                    // Leaf
-                }
                 ItemKind::Module { body, .. } => {
-                    if let Some(items) = body {
-                        items.visit_mut(visitor);
-                    }
+                    body.visit_mut(visitor);
                 }
+                ItemKind::Import(_) => {}
             },
             VisitAction::SkipChildren => {}
         }
@@ -295,40 +301,38 @@ impl Visitable for AssocItemKind {
     fn visit(&self, visitor: &mut impl Visitor) {
         match self {
             AssocItemKind::Fn(f) => f.visit(visitor),
+            AssocItemKind::Type { type_, .. } => {
+                type_.visit(visitor);
+            }
         }
     }
 
     fn visit_mut(&mut self, visitor: &mut impl VisitorMut) {
         match self {
             AssocItemKind::Fn(f) => f.visit_mut(visitor),
+            AssocItemKind::Type { type_, .. } => {
+                type_.visit_mut(visitor);
+            }
         }
     }
 }
 
 impl Visitable for Fn {
     fn visit(&self, visitor: &mut impl Visitor) {
-        if let Some(params) = &self.generic_params {
-            params.visit(visitor);
-        }
+        self.generic_params.visit(visitor);
         for arg in &self.parameters {
             arg.1.visit(visitor);
         }
-        if let Some(body) = &self.body {
-            body.visit(visitor);
-        }
+        self.body.visit(visitor);
         self.return_type.visit(visitor);
     }
 
     fn visit_mut(&mut self, visitor: &mut impl VisitorMut) {
-        if let Some(params) = &mut self.generic_params {
-            params.visit_mut(visitor);
-        }
+        self.generic_params.visit_mut(visitor);
         for arg in &mut self.parameters {
             arg.1.visit_mut(visitor);
         }
-        if let Some(body) = &mut self.body {
-            body.visit_mut(visitor);
-        }
+        self.body.visit_mut(visitor);
         self.return_type.visit_mut(visitor);
     }
 }
@@ -345,29 +349,21 @@ impl Visitable for Block {
 
 impl Visitable for GenericParams {
     fn visit(&self, visitor: &mut impl Visitor) {
-        for param in &self.params {
-            param.visit(visitor);
-        }
+        self.params.visit(visitor);
     }
 
     fn visit_mut(&mut self, visitor: &mut impl VisitorMut) {
-        for param in &mut self.params {
-            param.visit_mut(visitor);
-        }
+        self.params.visit_mut(visitor);
     }
 }
 
 impl Visitable for GenericParam {
     fn visit(&self, visitor: &mut impl Visitor) {
-        if let Some(ty) = &self.default {
-            ty.visit(visitor);
-        }
+        self.default.visit(visitor);
     }
 
     fn visit_mut(&mut self, visitor: &mut impl VisitorMut) {
-        if let Some(ty) = &mut self.default {
-            ty.visit_mut(visitor);
-        }
+        self.default.visit_mut(visitor);
     }
 }
 
@@ -375,17 +371,9 @@ impl Visitable for Stmt {
     fn visit(&self, visitor: &mut impl Visitor) {
         match visitor.visit_stmt(self) {
             VisitAction::Continue => match &self.kind {
-                StmtKind::Expr(expr) => expr.visit(visitor),
-                StmtKind::Semi(expr) => expr.visit(visitor),
-                StmtKind::Let {
-                    name: _,
-                    ty,
-                    value,
-                    mutability: _,
-                } => {
-                    if let Some(val) = value {
-                        val.visit(visitor);
-                    }
+                StmtKind::Expr(expr) | StmtKind::Semi(expr) => expr.visit(visitor),
+                StmtKind::Let { ty, value, .. } => {
+                    value.visit(visitor);
                     ty.visit(visitor);
                 }
             },
@@ -396,17 +384,9 @@ impl Visitable for Stmt {
     fn visit_mut(&mut self, visitor: &mut impl VisitorMut) {
         match visitor.visit_stmt(self) {
             VisitAction::Continue => match &mut self.kind {
-                StmtKind::Expr(expr) => expr.visit_mut(visitor),
-                StmtKind::Semi(expr) => expr.visit_mut(visitor),
-                StmtKind::Let {
-                    name: _,
-                    ty,
-                    value,
-                    mutability: _,
-                } => {
-                    if let Some(val) = value {
-                        val.visit_mut(visitor);
-                    }
+                StmtKind::Expr(expr) | StmtKind::Semi(expr) => expr.visit_mut(visitor),
+                StmtKind::Let { ty, value, .. } => {
+                    value.visit_mut(visitor);
                     ty.visit_mut(visitor);
                 }
             },
@@ -419,7 +399,7 @@ impl Visitable for Expr {
     fn visit(&self, visitor: &mut impl Visitor) {
         match visitor.visit_expr(self) {
             VisitAction::Continue => match &self.kind {
-                ExprKind::Literal(l) => l.visit(visitor),
+                ExprKind::Literal(_) => {}
                 ExprKind::Block(b) => b.visit(visitor),
                 ExprKind::If {
                     condition,
@@ -435,28 +415,14 @@ impl Visitable for Expr {
                     body.visit(visitor);
                 }
                 ExprKind::Loop(b) => b.visit(visitor),
-                ExprKind::Path(path) => {
-                    for segment in &path.segments {
-                        segment.generic_args.visit(visitor);
-                    }
-                }
-                ExprKind::Binary {
-                    left,
-                    operator: _,
-                    right,
-                } => {
+                ExprKind::Path(path) => path.visit(visitor),
+                ExprKind::Binary { left, right, .. } => {
                     left.visit(visitor);
                     right.visit(visitor);
                 }
-                ExprKind::Dereference { expr } => {
-                    expr.visit(visitor);
-                }
-                ExprKind::Reference { expr, .. } => {
-                    expr.visit(visitor);
-                }
-                ExprKind::Unary { operator: _, right } => {
-                    right.visit(visitor);
-                }
+                ExprKind::Dereference { expr } => expr.visit(visitor),
+                ExprKind::Reference { expr, .. } => expr.visit(visitor),
+                ExprKind::Unary { right, .. } => right.visit(visitor),
                 ExprKind::Range { start, end, .. } => {
                     start.visit(visitor);
                     end.visit(visitor);
@@ -468,23 +434,17 @@ impl Visitable for Expr {
                     value.visit(visitor);
                 }
                 ExprKind::StructInstantiation { path, fields } => {
-                    for segment in &path.segments {
-                        segment.generic_args.visit(visitor);
-                    }
+                    path.visit(visitor);
                     for field in fields {
                         field.1.visit(visitor);
                     }
                 }
-                ExprKind::Array { contents } => {
-                    contents.visit(visitor);
-                }
+                ExprKind::Array { contents } => contents.visit(visitor),
                 ExprKind::FunctionCall { callee, arguments } => {
                     callee.visit(visitor);
                     arguments.visit(visitor);
                 }
-                ExprKind::MemberAccess { base, .. } => {
-                    base.visit(visitor);
-                }
+                ExprKind::MemberAccess { base, .. } => base.visit(visitor),
                 ExprKind::Index { base, index } => {
                     base.visit(visitor);
                     index.visit(visitor);
@@ -493,21 +453,9 @@ impl Visitable for Expr {
                     expr.visit(visitor);
                     ty.visit(visitor);
                 }
-                ExprKind::Tuple { elements } => {
-                    for element in elements {
-                        element.visit(visitor);
-                    }
-                }
-                ExprKind::Break(b) => {
-                    if let Some(val) = b {
-                        val.visit(visitor);
-                    }
-                }
-                ExprKind::Return(r) => {
-                    if let Some(val) = r {
-                        val.visit(visitor);
-                    }
-                }
+                ExprKind::Tuple { elements } => elements.visit(visitor),
+                ExprKind::Break(b) => b.visit(visitor),
+                ExprKind::Return(r) => r.visit(visitor),
             },
             VisitAction::SkipChildren => {}
         }
@@ -516,7 +464,7 @@ impl Visitable for Expr {
     fn visit_mut(&mut self, visitor: &mut impl VisitorMut) {
         match visitor.visit_expr(self) {
             VisitAction::Continue => match &mut self.kind {
-                ExprKind::Literal(l) => l.visit_mut(visitor),
+                ExprKind::Literal(_) => {}
                 ExprKind::Block(b) => b.visit_mut(visitor),
                 ExprKind::If {
                     condition,
@@ -532,16 +480,8 @@ impl Visitable for Expr {
                     body.visit_mut(visitor);
                 }
                 ExprKind::Loop(b) => b.visit_mut(visitor),
-                ExprKind::Path(path) => {
-                    for segment in &mut path.segments {
-                        segment.generic_args.visit_mut(visitor);
-                    }
-                }
-                ExprKind::Binary {
-                    left,
-                    operator: _,
-                    right,
-                } => {
+                ExprKind::Path(path) => path.visit_mut(visitor),
+                ExprKind::Binary { left, right, .. } => {
                     left.visit_mut(visitor);
                     right.visit_mut(visitor);
                 }
@@ -551,7 +491,7 @@ impl Visitable for Expr {
                 ExprKind::Reference { expr, .. } => {
                     expr.visit_mut(visitor);
                 }
-                ExprKind::Unary { operator: _, right } => {
+                ExprKind::Unary { right, .. } => {
                     right.visit_mut(visitor);
                 }
                 ExprKind::Range { start, end, .. } => {
@@ -565,23 +505,17 @@ impl Visitable for Expr {
                     value.visit_mut(visitor);
                 }
                 ExprKind::StructInstantiation { path, fields } => {
-                    for segment in &mut path.segments {
-                        segment.generic_args.visit_mut(visitor);
-                    }
+                    path.visit_mut(visitor);
                     for field in fields {
                         field.1.visit_mut(visitor);
                     }
                 }
-                ExprKind::Array { contents } => {
-                    contents.visit_mut(visitor);
-                }
+                ExprKind::Array { contents } => contents.visit_mut(visitor),
                 ExprKind::FunctionCall { callee, arguments } => {
                     callee.visit_mut(visitor);
                     arguments.visit_mut(visitor);
                 }
-                ExprKind::MemberAccess { base, .. } => {
-                    base.visit_mut(visitor);
-                }
+                ExprKind::MemberAccess { base, .. } => base.visit_mut(visitor),
                 ExprKind::Index { base, index } => {
                     base.visit_mut(visitor);
                     index.visit_mut(visitor);
@@ -590,34 +524,12 @@ impl Visitable for Expr {
                     expr.visit_mut(visitor);
                     ty.visit_mut(visitor);
                 }
-                ExprKind::Tuple { elements } => {
-                    for element in elements {
-                        element.visit_mut(visitor);
-                    }
-                }
-                ExprKind::Break(b) => {
-                    if let Some(val) = b {
-                        val.visit_mut(visitor);
-                    }
-                }
-                ExprKind::Return(r) => {
-                    if let Some(val) = r {
-                        val.visit_mut(visitor);
-                    }
-                }
+                ExprKind::Tuple { elements } => elements.visit_mut(visitor),
+                ExprKind::Break(b) => b.visit_mut(visitor),
+                ExprKind::Return(r) => r.visit_mut(visitor),
             },
             VisitAction::SkipChildren => {}
         }
-    }
-}
-
-impl Visitable for Literal {
-    fn visit(&self, _visitor: &mut impl Visitor) {
-        // Unit
-    }
-
-    fn visit_mut(&mut self, _visitor: &mut impl VisitorMut) {
-        // Unit
     }
 }
 
@@ -625,29 +537,27 @@ impl Visitable for Type {
     fn visit(&self, visitor: &mut impl Visitor) {
         match visitor.visit_type(self) {
             VisitAction::Continue => match &self.kind {
-                TypeKind::Symbol(path) => {
-                    for segment in &path.segments {
-                        segment.generic_args.visit(visitor);
-                    }
-                }
+                TypeKind::Symbol(path) => path.visit(visitor),
                 TypeKind::Pointer(ty, _) => ty.visit(visitor),
                 TypeKind::Slice(ty) => ty.visit(visitor),
-                TypeKind::FixedArray(ty, _) => {
-                    ty.visit(visitor);
-                }
+                TypeKind::FixedArray(ty, _) => ty.visit(visitor),
                 TypeKind::Function { params, ret } => {
                     params.visit(visitor);
                     ret.visit(visitor);
                 }
-                TypeKind::Tuple(elements) => {
-                    elements.visit(visitor);
+                TypeKind::Tuple(elements) => elements.visit(visitor),
+                TypeKind::Projection {
+                    base,
+                    trait_,
+                    generic_args,
+                    ..
+                } => {
+                    base.0.visit(visitor);
+                    trait_.0.visit(visitor);
+                    generic_args.visit(visitor);
                 }
-                TypeKind::Infer => {
-                    // Leaf
-                }
-                TypeKind::Never => {
-                    // Leaf
-                }
+                TypeKind::Infer => {}
+                TypeKind::Never => {}
             },
             VisitAction::SkipChildren => {}
         }
@@ -656,29 +566,27 @@ impl Visitable for Type {
     fn visit_mut(&mut self, visitor: &mut impl VisitorMut) {
         match visitor.visit_type(self) {
             VisitAction::Continue => match &mut self.kind {
-                TypeKind::Symbol(path) => {
-                    for segment in &mut path.segments {
-                        segment.generic_args.visit_mut(visitor);
-                    }
-                }
+                TypeKind::Symbol(path) => path.visit_mut(visitor),
                 TypeKind::Pointer(ty, _) => ty.visit_mut(visitor),
                 TypeKind::Slice(ty) => ty.visit_mut(visitor),
-                TypeKind::FixedArray(ty, _) => {
-                    ty.visit_mut(visitor);
-                }
+                TypeKind::FixedArray(ty, _) => ty.visit_mut(visitor),
                 TypeKind::Function { params, ret } => {
                     params.visit_mut(visitor);
                     ret.visit_mut(visitor);
                 }
-                TypeKind::Tuple(elements) => {
-                    elements.visit_mut(visitor);
+                TypeKind::Tuple(elements) => elements.visit_mut(visitor),
+                TypeKind::Projection {
+                    base,
+                    trait_,
+                    generic_args,
+                    ..
+                } => {
+                    base.0.visit_mut(visitor);
+                    trait_.0.visit_mut(visitor);
+                    generic_args.visit_mut(visitor);
                 }
-                TypeKind::Infer => {
-                    // Leaf
-                }
-                TypeKind::Never => {
-                    // Leaf
-                }
+                TypeKind::Infer => {}
+                TypeKind::Never => {}
             },
             VisitAction::SkipChildren => {}
         }

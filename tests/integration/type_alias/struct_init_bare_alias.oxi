@@ -1,0 +1,18 @@
+struct Bar<T = i32> {
+    x: T,
+}
+
+type B = Bar;
+
+struct Baz<T, U = u8> {
+    x: T,
+    y: U,
+}
+
+type Bz = Baz::<i32>;
+
+fn main() void {
+    let b = B { x: 5 };
+    let unused = B { x: 1.5 };
+    let z = Bz { x: 1, y: 2 };
+}

@@ -1,0 +1,14 @@
+struct Target<T, U = T, V = U> {
+    first: T,
+    second: U,
+    third: V,
+}
+
+type PartiallyApplied<T> = Target::<T>;
+
+pub fn main() void {
+    let p = PartiallyApplied::<u32> { first: 1, second: 2, third: 3 };
+    let first: u32 = p.first;
+    let second: u32 = p.second;
+    let third: u32 = p.third;
+}

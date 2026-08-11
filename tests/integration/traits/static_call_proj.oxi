@@ -1,0 +1,21 @@
+trait TraitB {
+    type Output;
+
+    fn get_out(x: S) Self::Output;
+}
+
+struct S {}
+
+impl TraitB for S {
+    type Output = u32;
+
+    fn get_out(x: S) Self::Output {
+        42
+    }
+}
+
+pub fn main() void {
+    let s = S {};
+    let x: u32 = S::get_out(s);
+    let _ = x;
+}

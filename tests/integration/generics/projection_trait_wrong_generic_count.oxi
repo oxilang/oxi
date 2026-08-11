@@ -1,0 +1,15 @@
+// @expect-error unexpected_generic_args
+
+trait Add<T = i32> {
+    type Out;
+}
+
+struct Foo {}
+
+impl Add for Foo {
+    type Out = i32;
+}
+
+pub fn main() void {
+    let _: <Foo as Add::<u32, u64> >::Out = 1;
+}

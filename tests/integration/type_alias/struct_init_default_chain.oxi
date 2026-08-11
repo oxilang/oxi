@@ -1,0 +1,13 @@
+struct Pair<T, U> {
+    first: T,
+    second: U,
+}
+
+type PairAlias<T = i64, U = T> = Pair::<T, U>;
+
+pub fn main() void {
+    // The alias default `U = T` must resolve `T` to the provided `u32`.
+    let p = PairAlias::<u32> { first: 12, second: 24 };
+    let first: u32 = p.first;
+    let second: u32 = p.second;
+}

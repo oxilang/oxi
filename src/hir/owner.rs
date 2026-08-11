@@ -55,6 +55,10 @@ impl OwnerNodes {
     pub fn body(&self, id: BodyId) -> Option<&Body> {
         self.bodies.get(&id)
     }
+
+    pub fn body_mut(&mut self, id: BodyId) -> Option<&mut Body> {
+        self.bodies.get_mut(&id)
+    }
 }
 
 #[derive(Debug)]

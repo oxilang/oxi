@@ -1,0 +1,33 @@
+pub trait TraitA {
+    type Output;
+}
+pub trait TraitB {
+    type Output;
+}
+
+struct S {}
+
+impl TraitA for S {
+    type Output = i32;
+
+    fn make() S {
+        let x: <S as TraitB>::Output = 2 as u32;
+        let _ = x;
+        return S {};
+    }
+}
+
+impl TraitB for S {
+    type Output = u32;
+    fn make() S {
+        return S {};
+    }
+}
+
+pub fn main() void {
+    let a: <S as TraitA>::Output = 1 as i32;
+    let b: <S as TraitB>::Output = 2 as u32;
+    let _ = a;
+    let _ = b;
+    let _ = S::make();
+}

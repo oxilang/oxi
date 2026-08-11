@@ -1,0 +1,13 @@
+// @expect-error unresolved_assoc_type
+
+trait Foo {
+    type A;
+}
+
+fn f<T>(x: T) T::A {
+    x
+}
+
+pub fn main() void {
+    let _ = f(1);
+}

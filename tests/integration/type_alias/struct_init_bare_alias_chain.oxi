@@ -1,0 +1,12 @@
+struct Pair<T = i64, U = T> {
+    first: T,
+    second: U,
+}
+
+type A = Pair;
+
+pub fn main() void {
+    // Bare alias to a defaulted generic struct: `U` defaults through the chain to `i64`.
+    let p = A { first: 12, second: 24 };
+    let second: i64 = p.second;
+}

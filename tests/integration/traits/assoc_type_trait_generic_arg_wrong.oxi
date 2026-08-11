@@ -1,0 +1,22 @@
+// @expect-error type_mismatch
+
+struct S {}
+
+trait A<T> {
+    type Assoc;
+}
+
+impl A::<i8> for S {
+    type Assoc = i8;
+}
+
+impl A::<u8> for S {
+    type Assoc = u8;
+}
+
+fn main() void {
+    let x_i8: <S as A::<i8> >::Assoc = 12;
+    consume_u8(x_i8);
+}
+
+fn consume_u8(x: u8) void {}

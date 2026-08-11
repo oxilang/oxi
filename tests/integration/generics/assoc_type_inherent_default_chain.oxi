@@ -1,0 +1,10 @@
+// @expect-error type_mismatch
+
+struct Foo<A = i32, B = A> {
+    type Bar = B;
+}
+
+pub fn main() void {
+    let x: Foo::Bar = true;
+    let _ = x;
+}

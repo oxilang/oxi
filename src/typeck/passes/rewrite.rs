@@ -1,17 +1,15 @@
-use crate::hir::{BodyId, Expr, ExprKind, HirId, MaybeOwner, QPath, Stmt, StmtKind};
+use crate::hir::{Expr, ExprKind, HirId, QPath, Stmt, StmtKind};
 use crate::span::Span;
 use crate::typeck::{MemberRes, Typeck};
 use fxhash::FxHashMap;
 
 impl<'ctx, 'hir, 'res> Typeck<'ctx, 'hir, 'res> {
     pub(crate) fn rewrite_member_access(&mut self) {
-        for owner in self.krate.owners.iter_mut() {
-            let MaybeOwner::Owner(info) = owner else {
+        for owner in self.krate.get_mut().owners.iter_mut() {
+            let Some(info) = owner.as_owner_mut() else {
                 continue;
             };
-            let body_ids: Vec<BodyId> = info.nodes.bodies.keys().copied().collect();
-            for body_id in body_ids {
-                let body = info.nodes.bodies.get_mut(&body_id).expect("body exists");
+            for body in info.nodes.bodies.values_mut() {
                 rewrite_expr(&mut body.value, &self.member_res);
             }
         }

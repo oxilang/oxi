@@ -1,0 +1,24 @@
+// @expect-error unresolved_assoc_type
+
+trait TraitA {
+    type Output;
+}
+
+trait TraitB {
+    type Output;
+}
+
+struct S {}
+
+impl TraitA for S {
+    type Output = i32;
+}
+
+impl TraitB for S {
+    type Output = u32;
+}
+
+pub fn main() void {
+    let x: S::Output;
+    let _ = x;
+}

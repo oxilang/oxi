@@ -1,0 +1,10 @@
+type Pair<T> = (T, T);
+
+struct Wrapper {
+    data: Pair::<i32>,
+}
+
+pub fn main() void {
+    let w = Wrapper { data: (1, 2) };
+    let _ = w.data;
+}

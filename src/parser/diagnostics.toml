@@ -1,5 +1,9 @@
 [unexpected_token]
 level = "Fatal"
+message = "Unexpected token `{actual}`"
+
+[expected_token]
+level = "Fatal"
 message = "Expected `{expected}` but received `{actual}` instead."
 
 [expected_identifier]
@@ -16,7 +20,11 @@ message = "Expected top-level item, but found `{actual}` instead."
 
 [struct_method_missing_body]
 level = "Error"
-message = "Struct methods must have a body"
+message = "Associated functions in structs must have a body"
+
+[struct_assoc_type_missing_body]
+level = "Error"
+message = "Associated types in structs must have a body"
 
 [field_already_defined]
 level = "Error"
@@ -26,17 +34,25 @@ message = "Field `{field}` has already been defined in struct `{struct}`"
 level = "Error"
 message = "Expected trait method to not have a body"
 
+[trait_assoc_type_has_body]
+level = "Error"
+message = "Expected trait associated type to not have a body"
+
 [expected_term_or_body_after_signature]
 level = "Fatal"
 message = "Expected function body or terminator after signature"
 
 [impl_method_missing_body]
 level = "Error"
-message = "Impl methods must have a body"
+message = "Methods in impl items must have a body"
+
+[impl_type_missing_body]
+level = "Error"
+message = "Associated types in impl items must have a body"
 
 [const_item_without_value]
 level = "Warning"
-message = "Declared constant without providing a value"
+message = "Declared a constant without providing a value"
 
 [unknown_escape_sequence]
 level = "Warning"

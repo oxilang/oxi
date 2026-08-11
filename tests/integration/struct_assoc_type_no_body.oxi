@@ -1,0 +1,5 @@
+// @expect-error struct_assoc_type_missing_body
+
+struct Foo {
+    type Bar;
+}

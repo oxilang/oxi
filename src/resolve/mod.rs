@@ -1,6 +1,7 @@
 mod early;
 mod late;
 mod path;
+mod prepass;
 
 mod mod_tree;
 pub use mod_tree::{ModuleTree, build_module_tree};
@@ -69,6 +70,18 @@ pub enum Res<Id = NodeId> {
     SelfTyAlias { alias_to: DefId },
     /// Error in name resolution
     Err,
+}
+
+impl Res {
+    fn is_type_ns(&self, resolver: &Resolver) -> bool {
+        match self {
+            Res::Def(def) => resolver.is_type_def(*def),
+            Res::SelfTyAlias { .. } => true,
+            Res::GenericParam(_) => true,
+            Res::PrimTy(_) => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -163,9 +176,6 @@ impl NameResolution {
 #[derive(Debug, Clone, Default)]
 pub struct ModuleData {
     pub resolutions: FxHashMap<Symbol, NameResolution>,
-    pub struct_methods: FxHashMap<DefId, FxHashMap<Symbol, NameBinding>>,
-    pub impls: ThinVec<DefId>,
-    pub methods: ThinVec<DefId>,
     pub parent: Option<usize>,
     pub children: Vec<usize>,
     pub qualified_name: String,
@@ -180,6 +190,17 @@ pub struct ResolverOutputs {
     /// Arena\[DefId] -> Def
     pub defs: ThinVec<Def>,
     pub modules: PerModule<ModuleData>,
+    pub def_to_module: FxHashMap<DefId, ModuleId>,
+}
+
+impl ResolverOutputs {
+    pub fn def(&self, def_id: DefId) -> &Def {
+        &self.defs[def_id.0 as usize]
+    }
+
+    pub fn def_mut(&mut self, def_id: DefId) -> &mut Def {
+        &mut self.defs[def_id.0 as usize]
+    }
 }
 
 #[derive(Debug)]
@@ -196,6 +217,7 @@ pub struct Resolver<'a, 'ctx> {
     def_map: NodeMap<DefId>,
     /// Arena\[DefId] -> Def
     defs: ThinVec<Def>,
+    def_to_module: FxHashMap<DefId, ModuleId>,
 
     // Late res
     /// maps (path node id) -> (res)
@@ -224,6 +246,7 @@ impl<'a, 'ctx> Resolver<'a, 'ctx> {
             modules,
             def_map: NodeMap::default(),
             defs: ThinVec::new(),
+            def_to_module: FxHashMap::default(),
             res_map: NodeMap::default(),
         }
     }
@@ -241,6 +264,7 @@ impl<'a, 'ctx> Resolver<'a, 'ctx> {
             def_map: self.def_map,
             defs: self.defs,
             modules: self.modules,
+            def_to_module: self.def_to_module,
         }
     }
 
@@ -271,5 +295,17 @@ impl<'a, 'ctx> Resolver<'a, 'ctx> {
                 None => unreachable!(),
             }
         }
+    }
+
+    fn is_type_def(&self, def_id: DefId) -> bool {
+        matches!(
+            self.defs.get(def_id.0 as usize).map(|d| d.kind),
+            Some(DefKind::Struct | DefKind::Trait | DefKind::TypeAlias | DefKind::AssocType)
+        )
+    }
+
+    fn register_def_to_module(&mut self, def_id: DefId) {
+        self.def_to_module
+            .insert(def_id, ModuleId(self.module_idx as u32));
     }
 }

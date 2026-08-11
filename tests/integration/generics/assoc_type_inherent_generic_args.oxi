@@ -1,0 +1,9 @@
+// @expect-error unexpected_generic_args
+
+struct Foo<T> {
+    type Bar = T;
+}
+
+pub fn main() void {
+    let b: Foo::<u8>::Bar::<bool> = 2;
+}

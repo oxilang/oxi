@@ -1,0 +1,13 @@
+trait Add<T, U = u32> {
+    type Out;
+}
+
+struct Foo {}
+
+impl Add::<u8> for Foo {
+    type Out = u32;
+}
+
+pub fn main() void {
+    let _: <Foo as Add::<u8> >::Out = 1;
+}

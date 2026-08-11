@@ -1,0 +1,7 @@
+type A = i32;
+type B = A;
+
+pub fn main() void {
+    let x: B = 42;
+    let _ = x;
+}

@@ -123,9 +123,12 @@ pub fn parse_struct_decl_item(
             Visibility::Private
         };
 
-        if parser.current_token().kind == TokenKind::Fn {
-            let stmt = parse_fn_decl_item(parser, ThinVec::new(), ThinVec::new())?;
-            if let ItemKind::Fn(fn_decl) = stmt.kind {
+        match parser.current_token().kind {
+            TokenKind::Fn => {
+                let stmt = parse_fn_decl_item(parser, ThinVec::new(), ThinVec::new())?;
+                let ItemKind::Fn(fn_decl) = stmt.kind else {
+                    unreachable!()
+                };
                 if fn_decl.body.is_none() {
                     builders::emit_at(
                         parser.ctx,
@@ -136,52 +139,54 @@ pub fn parse_struct_decl_item(
                     );
                 }
                 items.push(AssocItem {
-                    kind: AssocItemKind::Fn(Fn {
-                        is_extern: false,
-                        ..fn_decl
-                    }),
+                    kind: AssocItemKind::Fn(fn_decl),
                     span: stmt.span,
                     visibility,
                     node_id: NodeId::default(),
                 })
-            };
-            continue;
-        }
-
-        if parser.current_token().kind == TokenKind::Identifier {
-            let property_name = parser.expect_identifier()?;
-            parser.expect(TokenKind::Colon)?;
-            let type_ = parse_type(parser, BindingPower::DefaultBp)?;
-
-            if parser.current_token().kind != TokenKind::CloseCurly {
-                parser.expect(TokenKind::Comma)?;
             }
-
-            if fields.iter().any(|arg| arg.0.value == property_name.value) {
-                let field = parser.ctx.interner.lookup(property_name.value).to_string();
-                let strct = parser.ctx.interner.lookup(name.value).to_string();
-                builders::emit_at(
-                    parser.ctx,
-                    property_name.span,
-                    parser.current_token().module_id,
-                    diag::FieldAlreadyDefined,
-                    diag_params! { field = field, struct = strct },
-                );
-                continue;
+            TokenKind::Type => {
+                let mut assoc = parse_type_assoc_item(parser)?;
+                let AssocItemKind::Type { type_, .. } = &mut assoc.kind else {
+                    unreachable!()
+                };
+                if type_.is_none() {
+                    builders::emit_at(
+                        parser.ctx,
+                        assoc.span,
+                        parser.current_token().module_id,
+                        diag::StructAssocTypeMissingBody,
+                        diag_params! {},
+                    );
+                }
+                assoc.visibility = visibility;
+                items.push(assoc);
             }
+            TokenKind::Identifier => {
+                let property_name = parser.expect_identifier()?;
+                parser.expect(TokenKind::Colon)?;
+                let type_ = parse_type(parser, BindingPower::DefaultBp)?;
 
-            let visibility = if is_public {
-                Visibility::Public
-            } else {
-                Visibility::Private
-            };
+                if parser.current_token().kind != TokenKind::CloseCurly {
+                    parser.expect(TokenKind::Comma)?;
+                }
 
-            fields.push((property_name, type_, visibility));
-
-            continue;
+                if fields.iter().any(|arg| arg.0.value == property_name.value) {
+                    let field = parser.ctx.interner.lookup(property_name.value).to_string();
+                    let strct = parser.ctx.interner.lookup(name.value).to_string();
+                    builders::emit_at(
+                        parser.ctx,
+                        property_name.span,
+                        parser.current_token().module_id,
+                        diag::FieldAlreadyDefined,
+                        diag_params! { field = field, struct = strct },
+                    );
+                    continue;
+                }
+                fields.push((property_name, type_, visibility));
+            }
+            _ => unexpected_token(parser.ctx, parser.current_token(), "struct field"),
         }
-
-        unexpected_token(parser.ctx, parser.current_token(), "struct field");
     }
 
     let end_span = parser.expect(TokenKind::CloseCurly)?.span;
@@ -219,6 +224,54 @@ pub fn parse_struct_decl_item(
     })
 }
 
+pub fn parse_type_decl_item(
+    mut parser: &mut Parser,
+    attributes: ThinVec<Attribute>,
+    modifiers: ThinVec<Modifier>,
+) -> Result<Item> {
+    let type_token = parser.expect(TokenKind::Type)?;
+    let name = parser.expect_identifier()?;
+
+    let generic_params = parse_optional_generic_params(parser)?;
+
+    parser.expect(TokenKind::Equals)?;
+
+    let type_ = parse_type(parser, BindingPower::DefaultBp)?;
+
+    let end_span = parser.expect(TokenKind::Semicolon)?.span;
+
+    let (pub_mod,) = get_modifiers!(&mut parser, modifiers, [Pub]);
+
+    let mut is_public = false;
+
+    let mut start_span = type_token.span;
+
+    if let Some(pub_mod) = pub_mod {
+        start_span = pub_mod.span;
+        is_public = true;
+    };
+
+    let span = Span::new(start_span.start(), end_span.end());
+
+    let visibility = if is_public {
+        Visibility::Public
+    } else {
+        Visibility::Private
+    };
+
+    Ok(Item {
+        kind: ItemKind::Type {
+            name,
+            generic_params,
+            type_,
+        },
+        node_id: NodeId::default(),
+        attributes,
+        span,
+        visibility,
+    })
+}
+
 pub fn parse_trait_decl_item(
     mut parser: &mut Parser,
     attributes: ThinVec<Attribute>,
@@ -236,24 +289,43 @@ pub fn parse_trait_decl_item(
             break;
         }
 
-        let stmt = parse_fn_decl_item(parser, ThinVec::new(), ThinVec::new())?;
-        if let ItemKind::Fn(fn_decl) = stmt.kind {
-            if fn_decl.body.is_some() {
-                builders::emit_at(
-                    parser.ctx,
-                    stmt.span,
-                    parser.current_token().module_id,
-                    diag::TraitMethodHasBody,
-                    diag_params! {},
-                );
+        match parser.current_token().kind {
+            TokenKind::Type => {
+                let mut assoc = parse_type_assoc_item(parser)?;
+                if matches!(&assoc.kind, AssocItemKind::Type { type_: Some(_), .. }) {
+                    builders::emit_at(
+                        parser.ctx,
+                        assoc.span,
+                        parser.current_token().module_id,
+                        diag::TraitAssocTypeHasBody,
+                        diag_params! {},
+                    );
+                }
+                assoc.visibility = Visibility::Private;
+                items.push(assoc);
             }
+            TokenKind::Fn => {
+                let stmt = parse_fn_decl_item(parser, ThinVec::new(), ThinVec::new())?;
+                if let ItemKind::Fn(fn_decl) = stmt.kind {
+                    if fn_decl.body.is_some() {
+                        builders::emit_at(
+                            parser.ctx,
+                            stmt.span,
+                            parser.current_token().module_id,
+                            diag::TraitMethodHasBody,
+                            diag_params! {},
+                        );
+                    }
 
-            items.push(AssocItem {
-                kind: AssocItemKind::Fn(fn_decl),
-                visibility: Visibility::Private,
-                span: stmt.span,
-                node_id: NodeId::default(),
-            });
+                    items.push(AssocItem {
+                        kind: AssocItemKind::Fn(fn_decl),
+                        visibility: Visibility::Private,
+                        span: stmt.span,
+                        node_id: NodeId::default(),
+                    });
+                }
+            }
+            _ => unexpected_token(parser.ctx, parser.current_token(), "trait body"),
         }
     }
     let end_span = parser.expect(TokenKind::CloseCurly)?.span;
@@ -287,6 +359,28 @@ pub fn parse_trait_decl_item(
         attributes,
         span,
         visibility,
+    })
+}
+
+fn parse_type_assoc_item(parser: &mut Parser) -> Result<AssocItem> {
+    let type_token = parser.expect(TokenKind::Type)?;
+    let name = parser.expect_identifier()?;
+
+    let type_ = if parser.current_token().kind == TokenKind::Equals {
+        parser.advance();
+        Some(parse_type(parser, BindingPower::DefaultBp)?)
+    } else {
+        None
+    };
+
+    let end_span = parser.expect(TokenKind::Semicolon)?.span;
+    let span = Span::new(type_token.span.start(), end_span.end());
+
+    Ok(AssocItem {
+        kind: AssocItemKind::Type { name, type_ },
+        visibility: Visibility::Private,
+        span,
+        node_id: NodeId::default(),
     })
 }
 
@@ -407,23 +501,43 @@ pub fn parse_impl_item(
             break;
         }
 
-        let stmt = parse_fn_decl_item(parser, ThinVec::new(), ThinVec::new())?;
-        if let ItemKind::Fn(fn_decl) = stmt.kind {
-            if fn_decl.body.is_none() {
-                builders::emit_at(
-                    parser.ctx,
-                    fn_decl.name.span,
-                    parser.current_token().module_id,
-                    diag::ImplMethodMissingBody,
-                    diag_params! {},
-                );
+        match parser.current_token().kind {
+            TokenKind::Type => {
+                let mut assoc = parse_type_assoc_item(parser)?;
+                let has_body = matches!(&assoc.kind, AssocItemKind::Type { type_: Some(_), .. });
+                if !has_body {
+                    builders::emit_at(
+                        parser.ctx,
+                        assoc.span,
+                        parser.current_token().module_id,
+                        diag::ImplTypeMissingBody,
+                        diag_params! {},
+                    );
+                }
+                assoc.visibility = Visibility::Public;
+                items.push(assoc);
             }
-            items.push(AssocItem {
-                kind: AssocItemKind::Fn(fn_decl),
-                visibility: Visibility::Public,
-                span: stmt.span,
-                node_id: NodeId::default(),
-            });
+            TokenKind::Fn => {
+                let stmt = parse_fn_decl_item(parser, ThinVec::new(), ThinVec::new())?;
+                if let ItemKind::Fn(fn_decl) = stmt.kind {
+                    if fn_decl.body.is_none() {
+                        builders::emit_at(
+                            parser.ctx,
+                            fn_decl.name.span,
+                            parser.current_token().module_id,
+                            diag::ImplMethodMissingBody,
+                            diag_params! {},
+                        );
+                    }
+                    items.push(AssocItem {
+                        kind: AssocItemKind::Fn(fn_decl),
+                        visibility: Visibility::Public,
+                        span: stmt.span,
+                        node_id: NodeId::default(),
+                    });
+                }
+            }
+            _ => unexpected_token(parser.ctx, parser.current_token(), "impl body"),
         }
     }
     let end_span = parser.expect(TokenKind::CloseCurly)?.span;
@@ -441,34 +555,6 @@ pub fn parse_impl_item(
         // Visibility::Public as a placeholder value for AST uniformity. The visibility of
         // individual associated items within the impl block should be used instead.
         visibility: Visibility::Private,
-    })
-}
-
-pub fn parse_import_item(
-    mut parser: &mut Parser,
-    attributes: ThinVec<Attribute>,
-    modifiers: ThinVec<Modifier>,
-) -> Result<Item> {
-    let (pub_mod,) = get_modifiers!(&mut parser, modifiers, [Pub]);
-
-    let start_span = parser.expect(TokenKind::Import)?.span;
-    let tree = parse_import_tree(parser)?;
-    let end_span = parser.expect(TokenKind::Semicolon)?.span;
-
-    let span = Span::new(start_span.start(), end_span.end());
-
-    let visibility = if pub_mod.is_some() {
-        Visibility::Public
-    } else {
-        Visibility::Private
-    };
-
-    Ok(Item {
-        kind: ItemKind::Import(tree),
-        node_id: NodeId::default(),
-        attributes,
-        span,
-        visibility,
     })
 }
 
@@ -507,6 +593,34 @@ pub fn parse_module_item(
         node_id: NodeId::default(),
         attributes,
         span: Span::new(start_span.start(), end_span.end()),
+        visibility,
+    })
+}
+
+pub fn parse_import_item(
+    mut parser: &mut Parser,
+    attributes: ThinVec<Attribute>,
+    modifiers: ThinVec<Modifier>,
+) -> Result<Item> {
+    let (pub_mod,) = get_modifiers!(&mut parser, modifiers, [Pub]);
+
+    let start_span = parser.expect(TokenKind::Import)?.span;
+    let tree = parse_import_tree(parser)?;
+    let end_span = parser.expect(TokenKind::Semicolon)?.span;
+
+    let span = Span::new(start_span.start(), end_span.end());
+
+    let visibility = if pub_mod.is_some() {
+        Visibility::Public
+    } else {
+        Visibility::Private
+    };
+
+    Ok(Item {
+        kind: ItemKind::Import(tree),
+        node_id: NodeId::default(),
+        attributes,
+        span,
         visibility,
     })
 }

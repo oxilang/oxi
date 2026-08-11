@@ -36,11 +36,12 @@ impl NodeCounts {
         let kind_name = match &item.kind {
             ItemKind::Const { .. } => "ConstItem",
             ItemKind::Struct { .. } => "StructDeclItem",
+            ItemKind::Type { .. } => "TypeDeclItem",
             ItemKind::Trait { .. } => "TraitDeclItem",
             ItemKind::Impl { .. } => "ImplItem",
             ItemKind::Fn(_) => "FnDeclItem",
-            ItemKind::Import(_) => "ImportItem",
             ItemKind::Module { .. } => "ModuleItem",
+            ItemKind::Import(_) => "ImportItem",
         };
         *self.item_counts.entry(kind_name).or_insert(0) += 1;
     }
@@ -66,6 +67,7 @@ impl NodeCounts {
             TypeKind::FixedArray(..) => "FixedArrayType",
             TypeKind::Function { .. } => "FunctionType",
             TypeKind::Tuple(_) => "TupleType",
+            TypeKind::Projection { .. } => "ProjectionType",
             TypeKind::Infer => "Infer",
             TypeKind::Never => "Never",
         };

@@ -1,0 +1,9 @@
+// @expect-error unexpected_generic_args
+
+struct Baz<T> {
+    inner: T,
+}
+
+pub fn main() void {
+    let x: Baz = Baz::<i32> { inner: 42 };
+}

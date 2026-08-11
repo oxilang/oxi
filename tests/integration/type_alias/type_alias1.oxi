@@ -1,0 +1,5 @@
+type MyInt = i32;
+
+pub fn main() void {
+    let a: MyInt = 42;
+}

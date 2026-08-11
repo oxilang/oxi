@@ -1,0 +1,10 @@
+type Id<T> = T;
+
+fn echo<T>(x: T) Id::<T> {
+    x
+}
+
+pub fn main() void {
+    let y = echo(5);
+    let _ = y + 1;
+}

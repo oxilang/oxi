@@ -1,0 +1,7 @@
+struct Foo<T, U = i128> {
+    type Assoc = U;
+}
+
+fn main() void {
+    let foo: Foo::<u8>::Assoc = 1;
+}

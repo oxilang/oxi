@@ -1,0 +1,26 @@
+trait HasOut {
+    type Output;
+}
+
+struct S {}
+
+impl HasOut for S {
+    type Output = u32;
+}
+
+fn returns_proj() <S as HasOut>::Output {
+    42
+}
+
+fn takes_proj(x: <S as HasOut>::Output) <S as HasOut>::Output {
+    x
+}
+
+pub fn main() void {
+    let a = returns_proj();
+    let _ = a;
+    let b: u32 = takes_proj(returns_proj());
+    let _ = b;
+    takes_proj(42);
+    takes_proj(returns_proj());
+}

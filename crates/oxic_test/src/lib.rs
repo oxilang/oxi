@@ -50,6 +50,7 @@ fn collect_oxi_files(base: &Path, dir: &Path, tests: &mut TokenStream2) -> Resul
         let entry = entry?;
         let path = entry.path();
 
+        track_path(&path);
         if path.is_dir() {
             let name = path.file_name().unwrap().to_str().unwrap();
             if name == "auxiliary" {
@@ -57,7 +58,6 @@ fn collect_oxi_files(base: &Path, dir: &Path, tests: &mut TokenStream2) -> Resul
             }
             collect_oxi_files(base, &path, tests)?;
         } else if path.extension().is_some_and(|e| e == "oxi") {
-            track_path(&path);
             let source = fs::read_to_string(&path)?;
             let relative = path.strip_prefix(base).unwrap();
             let name = relative

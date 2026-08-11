@@ -142,58 +142,26 @@ impl InferCtx {
     }
 
     pub fn adjust(&mut self, ty: &Ty, bound: u32) -> Ty {
-        match ty {
+        fold_ty(ty, &mut |ty| match ty {
             Ty::Var(var) => {
-                let level = self.ty_var(*var).level;
-                if level <= bound {
-                    ty.clone()
-                } else {
-                    self.ty_var_mut(*var).level = bound;
-                    ty.clone()
+                let level = self.ty_var(var).level;
+                if level > bound {
+                    self.ty_var_mut(var).level = bound;
                 }
+                ty
             }
-            Ty::Ptr(inner, m) => Ty::Ptr(self.adjust(inner, bound).into_box(), *m),
-            Ty::Slice(inner) => Ty::Slice(self.adjust(inner, bound).into_box()),
-            Ty::Array(inner, size) => Ty::Array(self.adjust(inner, bound).into_box(), *size),
-            Ty::Fn { params, ret } => Ty::Fn {
-                params: params.iter().map(|ty| self.adjust(ty, bound)).collect(),
-                ret: self.adjust(ret, bound).into_box(),
-            },
-            Ty::Tuple(elements) => {
-                Ty::Tuple(elements.iter().map(|ty| self.adjust(ty, bound)).collect())
-            }
-            Ty::Adt(def_id, generics) => Ty::Adt(
-                *def_id,
-                generics
-                    .as_ref()
-                    .map(|tys| tys.iter().map(|ty| self.adjust(ty, bound)).collect()),
-            ),
-            Ty::Prim(_) | Ty::Never | Ty::MethodCallee | Ty::Error => ty.clone(),
-        }
+            ty => ty,
+        })
     }
 
     pub fn resolve(&self, ty: &Ty) -> Ty {
-        match ty {
-            Ty::Var(var) => match &self.ty_var(*var).root {
+        fold_ty(ty, &mut |ty| match ty {
+            Ty::Var(var) => match &self.ty_var(var).root {
                 Some(bound) => self.resolve(bound),
-                None => ty.clone(),
+                None => ty,
             },
-            Ty::Ptr(inner, m) => Ty::Ptr(self.resolve(inner).into_box(), *m),
-            Ty::Slice(inner) => Ty::Slice(self.resolve(inner).into_box()),
-            Ty::Array(inner, size) => Ty::Array(self.resolve(inner).into_box(), *size),
-            Ty::Fn { params, ret } => Ty::Fn {
-                params: params.iter().map(|ty| self.resolve(ty)).collect(),
-                ret: self.resolve(ret).into_box(),
-            },
-            Ty::Tuple(elements) => Ty::Tuple(elements.iter().map(|ty| self.resolve(ty)).collect()),
-            Ty::Adt(def_id, generics) => Ty::Adt(
-                *def_id,
-                generics
-                    .as_ref()
-                    .map(|tys| tys.iter().map(|ty| self.resolve(ty)).collect()),
-            ),
-            Ty::Prim(_) | Ty::Never | Ty::MethodCallee | Ty::Error => ty.clone(),
-        }
+            ty => ty,
+        })
     }
 
     pub fn vars_in(&self, ty: &Ty, out: &mut ThinVec<TyVarId>) {
@@ -220,6 +188,25 @@ impl InferCtx {
             Ty::Adt(_, generics) => {
                 if let Some(generics) = generics {
                     for ty in generics {
+                        self.vars_in(&ty, out);
+                    }
+                }
+            }
+            Ty::Alias { generic_args, .. } => {
+                if let Some(generics) = generic_args {
+                    for ty in generics {
+                        self.vars_in(&ty, out);
+                    }
+                }
+            }
+            Ty::Projection {
+                self_ty,
+                generic_args,
+                ..
+            } => {
+                self.vars_in(&self_ty, out);
+                if let Some(generic_args) = generic_args {
+                    for ty in generic_args {
                         self.vars_in(&ty, out);
                     }
                 }

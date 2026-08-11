@@ -71,7 +71,9 @@ pub fn build_scope_trees(hir_crate: &Crate) -> ScopeTrees {
                 _ => {}
             },
             Node::AssocItem(assoc) => {
-                let AssocItemKind::Fn(fun) = &assoc.kind;
+                let AssocItemKind::Fn(fun) = &assoc.kind else {
+                    continue;
+                };
                 if let Some(body_id) = fun.body_id
                     && let Some(body) = info.nodes.body(body_id)
                 {

@@ -14,7 +14,6 @@ use crate::ast::{Ast, NodeId, NodeMap};
 use crate::context::Ctx;
 use crate::interner::{Symbol, sym};
 use crate::resolve::{ModuleTree, ResolverOutputs};
-use fxhash::FxHashMap;
 
 pub use def::*;
 pub use owner::{Crate, HirId, MaybeOwner, OwnerInfo};
@@ -50,7 +49,7 @@ impl ItemLocalId {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum IntTy {
     Isize,
     I8,
@@ -60,7 +59,7 @@ pub enum IntTy {
     I128,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum UintTy {
     Usize,
     U8,
@@ -70,7 +69,7 @@ pub enum UintTy {
     U128,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FloatTy {
     F16,
     F32,
@@ -78,7 +77,7 @@ pub enum FloatTy {
     F128,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PrimTy {
     Int(IntTy),
     Uint(UintTy),
@@ -170,8 +169,6 @@ pub struct AstLoweringContext<'a, 'ctx> {
     next_local_id: u32,
     /// maps (node id) -> (hir id)
     node_to_hir_id: NodeMap<HirId>,
-    /// maps (def id) -> (module id)
-    def_to_module: FxHashMap<DefId, ModuleId>,
 }
 
 impl<'a, 'ctx> AstLoweringContext<'a, 'ctx> {
@@ -181,23 +178,6 @@ impl<'a, 'ctx> AstLoweringContext<'a, 'ctx> {
         module_tree: &'a ModuleTree,
         resolver: &'a ResolverOutputs,
     ) -> Self {
-        let mut def_to_module = FxHashMap::default();
-        for (i, module) in resolver.modules.iter().enumerate() {
-            for res in module.resolutions.values() {
-                def_to_module.insert(res.best_binding().def_id, ModuleId(i as u32));
-            }
-            for methods in module.struct_methods.values() {
-                for binding in methods.values() {
-                    def_to_module.insert(binding.def_id, ModuleId(i as u32));
-                }
-            }
-            for &impl_def_id in &module.impls {
-                def_to_module.insert(impl_def_id, ModuleId(i as u32));
-            }
-            for &method_def_id in &module.methods {
-                def_to_module.insert(method_def_id, ModuleId(i as u32));
-            }
-        }
         Self {
             ctx,
             asts,
@@ -206,7 +186,6 @@ impl<'a, 'ctx> AstLoweringContext<'a, 'ctx> {
             current_owner: None,
             next_local_id: 0,
             node_to_hir_id: NodeMap::default(),
-            def_to_module,
         }
     }
 

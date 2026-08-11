@@ -1,0 +1,9 @@
+// @expect-error unexpected_generic_args
+
+struct Baz<T> {
+    inner: T,
+}
+
+struct Foo {
+    type Bar = Baz;
+}

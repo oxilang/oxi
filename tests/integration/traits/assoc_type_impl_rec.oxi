@@ -1,0 +1,18 @@
+// @expect-error recursive_type
+
+struct Bar {}
+
+trait Foo {
+    type A;
+    type B;
+}
+
+impl Foo for Bar {
+    type A = Self::B;
+    type B = Self::A;
+}
+
+pub fn main() void {
+    let a: <Bar as Foo>::A;
+    let b: <Bar as Foo>::B;
+}

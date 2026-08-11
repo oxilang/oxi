@@ -1,0 +1,19 @@
+trait Bar {
+    type BarTy;
+    type BazTy;
+    type BawTy;
+
+    fn qux() Self::BawTy;
+}
+
+struct Foo {}
+
+impl Bar for Foo {
+    type BarTy = i32;
+    type BazTy = Self::BarTy;
+    type BawTy = Self::BazTy;
+
+    fn qux() Self::BawTy {
+        12
+    }
+}

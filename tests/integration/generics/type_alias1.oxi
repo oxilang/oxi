@@ -1,0 +1,5 @@
+type Id<T> = T;
+
+pub fn main() void {
+    let x: Id::<i32> = 1;
+}

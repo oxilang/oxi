@@ -1,11 +1,10 @@
 use thin_vec::ThinVec;
 
-use crate::ast::visit::{VisitAction, Visitable, Visitor, VisitorMut};
+use crate::ast::visit::{VisitAction, Visitable, Visitor};
 use crate::ast::{
-    AssocItem, AssocItemKind, Ast, Expr, Fn, GenericParams, ImportTree, ImportTreeKind, Item,
-    ItemKind, NodeId, Path, PathSegment, Stmt, Type, Visibility, path_segments_to_string,
+    AssocItem, AssocItemKind, ImportTree, ImportTreeKind, Item, ItemKind, NodeId, Path,
+    PathSegment, Visibility, path_segments_to_string,
 };
-use crate::context::Ctx;
 use crate::diag_params;
 use crate::errors::{CompilationError, builders};
 use crate::hir::{DefId, ModuleId};
@@ -15,10 +14,6 @@ use crate::resolve::{Def, DefKind, NameBinding, NameResolution, PendingImport, R
 use crate::span::Span;
 
 impl<'a, 'ctx> Resolver<'a, 'ctx> {
-    pub fn assign_node_ids(ctx: &mut Ctx, ast: &mut Ast) {
-        ast.visit_mut(&mut NodeIdAssigner::new(ctx));
-    }
-
     /// Allocates a definition and registers its name resolution
     fn create_def(
         &mut self,
@@ -309,105 +304,6 @@ impl<'a, 'ctx> Resolver<'a, 'ctx> {
 }
 
 #[derive(Debug)]
-struct NodeIdAssigner<'ctx> {
-    ctx: &'ctx mut Ctx,
-}
-
-impl<'ctx> NodeIdAssigner<'ctx> {
-    pub fn new(ctx: &'ctx mut Ctx) -> Self {
-        Self { ctx }
-    }
-
-    fn next_node_id(&mut self) -> NodeId {
-        let id = self.ctx.next_node_id;
-        self.ctx.next_node_id += 1;
-        NodeId(id)
-    }
-
-    fn assign_to_assoc_items(&mut self, items: &mut ThinVec<AssocItem>) {
-        for item in items {
-            item.node_id = self.next_node_id();
-            let AssocItemKind::Fn(fun) = &mut item.kind;
-            self.assign_to_fn(fun);
-        }
-    }
-
-    fn assign_to_fn(&mut self, fun: &mut Fn) {
-        if let Some(generic_params) = &mut fun.generic_params {
-            self.assign_to_generic_params(generic_params);
-        }
-        for arg in &mut fun.parameters {
-            arg.2 = self.next_node_id();
-        }
-    }
-
-    fn assign_to_generic_params(&mut self, generic_params: &mut GenericParams) {
-        for param in &mut generic_params.params {
-            param.node_id = self.next_node_id();
-        }
-    }
-}
-
-impl<'ctx> VisitorMut for NodeIdAssigner<'ctx> {
-    fn visit_item(&mut self, item: &mut Item) -> VisitAction {
-        item.node_id = self.next_node_id();
-
-        match &mut item.kind {
-            ItemKind::Fn(fun) => {
-                self.assign_to_fn(fun);
-            }
-            ItemKind::Impl {
-                self_ty,
-                trait_,
-                items,
-            } => {
-                self_ty.1 = self.next_node_id();
-                trait_.1 = self.next_node_id();
-                self.assign_to_assoc_items(items);
-            }
-            ItemKind::Struct {
-                items,
-                generic_params,
-                ..
-            } => {
-                self.assign_to_assoc_items(items);
-                if let Some(generic_params) = generic_params {
-                    self.assign_to_generic_params(generic_params);
-                }
-            }
-            ItemKind::Trait {
-                items,
-                generic_params,
-                ..
-            } => {
-                self.assign_to_assoc_items(items);
-                if let Some(generic_params) = generic_params {
-                    self.assign_to_generic_params(generic_params);
-                }
-            }
-            _ => {}
-        }
-
-        VisitAction::Continue
-    }
-
-    fn visit_stmt(&mut self, stmt: &mut Stmt) -> VisitAction {
-        stmt.node_id = self.next_node_id();
-        VisitAction::Continue
-    }
-
-    fn visit_expr(&mut self, expr: &mut Expr) -> VisitAction {
-        expr.node_id = self.next_node_id();
-        VisitAction::Continue
-    }
-
-    fn visit_type(&mut self, ty: &mut Type) -> VisitAction {
-        ty.node_id = self.next_node_id();
-        VisitAction::Continue
-    }
-}
-
-#[derive(Debug)]
 struct DefCollector<'a, 'res, 'ctx> {
     resolver: &'a mut Resolver<'res, 'ctx>,
 }
@@ -416,105 +312,103 @@ impl<'a, 'res, 'ctx> DefCollector<'a, 'res, 'ctx> {
     pub fn new(resolver: &'a mut Resolver<'res, 'ctx>) -> Self {
         Self { resolver }
     }
-
-    fn register_struct_method(&mut self, item: &AssocItem, struct_def_id: DefId) {
-        let AssocItemKind::Fn(f) = &item.kind;
-        let method_def_id = self.resolver.alloc_def(
-            item.node_id,
-            Some(f.name.value),
-            DefKind::AssocFn,
-            Some(item.visibility),
-            item.span,
-        );
-        let binding = NameBinding {
-            def_id: method_def_id,
-            visibility: item.visibility,
-        };
-        self.resolver
-            .current_module_mut()
-            .struct_methods
-            .entry(struct_def_id)
-            .or_default()
-            .insert(f.name.value, binding);
-    }
 }
 
 impl<'a, 'res, 'ctx> Visitor for DefCollector<'a, 'res, 'ctx> {
     fn visit_item(&mut self, item: &Item) -> VisitAction {
         match &item.kind {
             ItemKind::Const { name, .. } => {
-                let sym = name.value;
-                self.resolver.create_def(
+                let def_id = self.resolver.create_def(
                     item.node_id,
-                    sym,
+                    name.value,
                     DefKind::Const,
                     item.visibility,
                     item.span,
                 );
+                self.resolver.register_def_to_module(def_id);
                 VisitAction::SkipChildren
             }
-            ItemKind::Struct { name, items, .. } => {
-                let sym = name.value;
-                let struct_def_id = self.resolver.create_def(
+            ItemKind::Struct { name, .. } => {
+                let def_id = self.resolver.create_def(
                     item.node_id,
-                    sym,
+                    name.value,
                     DefKind::Struct,
                     item.visibility,
                     item.span,
                 );
-
-                for assoc in items {
-                    self.register_struct_method(assoc, struct_def_id);
-                }
-                VisitAction::SkipChildren
+                self.resolver.register_def_to_module(def_id);
+                VisitAction::Continue
             }
             ItemKind::Trait { name, .. } => {
-                let sym = name.value;
-                self.resolver.create_def(
+                let def_id = self.resolver.create_def(
                     item.node_id,
-                    sym,
+                    name.value,
                     DefKind::Trait,
                     item.visibility,
                     item.span,
                 );
+                self.resolver.register_def_to_module(def_id);
                 VisitAction::Continue
             }
             ItemKind::Impl { .. } => {
                 let def_id =
                     self.resolver
                         .alloc_def(item.node_id, None, DefKind::Impl, None, item.span);
-                self.resolver.current_module_mut().impls.push(def_id);
+                self.resolver.register_def_to_module(def_id);
                 VisitAction::Continue
             }
             ItemKind::Fn(f) => {
-                let sym = f.name.value;
-                self.resolver.create_def(
+                let def_id = self.resolver.create_def(
                     item.node_id,
-                    sym,
+                    f.name.value,
                     DefKind::Function,
                     item.visibility,
                     item.span,
                 );
+                self.resolver.register_def_to_module(def_id);
                 VisitAction::SkipChildren
             }
-            // Maybe we should also create defs for `mod` and `import` items, but just skip for now
-            _ => VisitAction::SkipChildren,
+            ItemKind::Type { name, .. } => {
+                let def_id = self.resolver.create_def(
+                    item.node_id,
+                    name.value,
+                    DefKind::TypeAlias,
+                    item.visibility,
+                    item.span,
+                );
+                self.resolver.register_def_to_module(def_id);
+                VisitAction::SkipChildren
+            }
+            ItemKind::Module { .. } => {
+                let def_id =
+                    self.resolver
+                        .alloc_def(item.node_id, None, DefKind::Mod, None, item.span);
+                self.resolver.register_def_to_module(def_id);
+                VisitAction::SkipChildren
+            }
+            ItemKind::Import(_) => {
+                let def_id =
+                    self.resolver
+                        .alloc_def(item.node_id, None, DefKind::Import, None, item.span);
+                self.resolver.register_def_to_module(def_id);
+                VisitAction::SkipChildren
+            }
         }
     }
 
     fn visit_assoc_item(&mut self, item: &AssocItem) -> VisitAction {
-        match &item.kind {
-            AssocItemKind::Fn(f) => {
-                let def_id = self.resolver.alloc_def(
-                    item.node_id,
-                    Some(f.name.value),
-                    DefKind::AssocFn,
-                    Some(item.visibility),
-                    item.span,
-                );
-                self.resolver.current_module_mut().methods.push(def_id);
-            }
-        }
+        let (kind, name) = match &item.kind {
+            AssocItemKind::Fn(f) => (DefKind::AssocFn, f.name.value),
+            AssocItemKind::Type { name, .. } => (DefKind::AssocType, name.value),
+        };
+        let def_id = self.resolver.alloc_def(
+            item.node_id,
+            Some(name),
+            kind,
+            Some(item.visibility),
+            item.span,
+        );
+        self.resolver.register_def_to_module(def_id);
         VisitAction::SkipChildren
     }
 }

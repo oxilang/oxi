@@ -1,0 +1,10 @@
+// @expect-error generic_default_before
+
+struct Foo<T = i32, U> {
+    a: T,
+    b: U,
+}
+
+pub fn main() void {
+    let foo = Foo { a: 1, b: 2 };
+}

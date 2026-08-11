@@ -1,4 +1,4 @@
-// @expect-error type_mismatch
+// @expect-error unexpected_generic_args
 
 struct Pair<A, B> {
     first: A,

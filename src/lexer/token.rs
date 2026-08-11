@@ -71,7 +71,7 @@ macro_rules! define_tokens {
 }
 
 define_tokens! {
-    reserved: [Let, True, False, Struct, Fn, Return, Pub, Const, Mut, Extern, Trait, Macro, If, Else, While, For, Break, Continue, As, Import, Impl, Loop, Mod],
+    reserved: [Let, True, False, Struct, Fn, Return, Pub, Const, Mut, Extern, Trait, Macro, If, Else, While, For, Break, Continue, As, Import, Impl, Loop, Mod, Type],
     symbols: [
         // Arithmetic
         Plus => "+",

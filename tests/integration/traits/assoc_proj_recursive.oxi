@@ -1,0 +1,16 @@
+// @expect-error unresolved_assoc_type
+
+struct Bar {}
+
+trait Foo {
+    type A;
+}
+
+impl Foo for Bar {
+    type A = <Bar as Foo>::A;
+}
+
+pub fn main() void {
+    let x: <Bar as Foo>::A;
+    let _ = x;
+}

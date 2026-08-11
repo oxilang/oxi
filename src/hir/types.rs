@@ -14,7 +14,7 @@ use crate::span::Span;
 #[derive(Debug, Clone)]
 pub enum OwnerNode<'a> {
     Item(&'a Item),
-    ImplItem(&'a AssocItem),
+    AssocItem(&'a AssocItem),
     Crate,
 }
 
@@ -22,7 +22,7 @@ impl<'a> OwnerNode<'a> {
     pub fn from_node(node: &'a Node) -> Option<Self> {
         match node {
             Node::Item(item) => Some(OwnerNode::Item(item)),
-            Node::AssocItem(item) => Some(OwnerNode::ImplItem(item)),
+            Node::AssocItem(item) => Some(OwnerNode::AssocItem(item)),
             Node::Crate => Some(OwnerNode::Crate),
             _ => None,
         }
@@ -31,7 +31,7 @@ impl<'a> OwnerNode<'a> {
     pub fn span(&self) -> Span {
         match self {
             OwnerNode::Item(item) => item.span,
-            OwnerNode::ImplItem(item) => item.span,
+            OwnerNode::AssocItem(item) => item.span,
             OwnerNode::Crate => Span::new(0, 0),
         }
     }
@@ -39,7 +39,7 @@ impl<'a> OwnerNode<'a> {
     pub fn hir_id(&self) -> HirId {
         match self {
             OwnerNode::Item(item) => item.hir_id,
-            OwnerNode::ImplItem(item) => item.hir_id,
+            OwnerNode::AssocItem(item) => item.hir_id,
             OwnerNode::Crate => HirId::INVALID,
         }
     }
@@ -47,7 +47,7 @@ impl<'a> OwnerNode<'a> {
     pub fn owner_id(&self) -> OwnerId {
         match self {
             OwnerNode::Item(item) => item.owner_id,
-            OwnerNode::ImplItem(item) => item.owner_id,
+            OwnerNode::AssocItem(item) => item.owner_id,
             OwnerNode::Crate => OwnerId(0),
         }
     }
@@ -141,6 +141,11 @@ pub enum ItemKind {
         items: ThinVec<DefId>,
         generic_params: Option<ThinVec<GenericParam>>,
     },
+    TypeAlias {
+        name: Symbol,
+        type_: Ty,
+        generic_params: Option<ThinVec<GenericParam>>,
+    },
     Trait {
         name: Symbol,
         items: ThinVec<DefId>,
@@ -169,6 +174,8 @@ pub struct AssocItem {
 #[derive(Debug, Clone)]
 pub enum AssocItemKind {
     Fn(Fn),
+    // TODO: Maybe add generic params to type?
+    Type { name: Symbol, type_: Option<Ty> },
 }
 
 #[derive(Debug, Clone)]
@@ -482,8 +489,8 @@ impl PathSegment {
 /// A path that may still have associated-item suffixes to resolve during type checking.
 #[derive(Debug, Clone)]
 pub enum QPath {
-    /// Fully resolved path
-    Resolved(Path),
+    /// Fully resolved path, optionally with a Self type for `<Self as Trait>` qselfs
+    Resolved(Option<Box<Ty>>, Path),
     /// Type-relative path: `T::Assoc`
     TypeRelative {
         qself: Box<QPath>,
@@ -494,7 +501,13 @@ pub enum QPath {
 impl QPath {
     pub fn display(&self, ctx: &Ctx) -> String {
         match self {
-            QPath::Resolved(path) => path.display(ctx),
+            QPath::Resolved(self_ty, path) => {
+                if let Some(self_ty) = self_ty {
+                    format!("<{} as {}>", self_ty.display(ctx), path.display(ctx))
+                } else {
+                    path.display(ctx)
+                }
+            }
             QPath::TypeRelative { qself, segment } => {
                 format!("{}::{}", qself.display(ctx), segment.display(ctx))
             }

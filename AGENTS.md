@@ -32,6 +32,16 @@ struct Foo<T = i32> {
     data: T,
 }
 
+trait Add<T = i32> {
+    fn add(self: &mut Self, rhs: T) T;
+}
+
+impl Add::<i32> for Foo {
+    fn add(self: &mut Self, rhs: i32) i32 {
+        self.data + rhs
+    }
+}
+
 fn identity<T>(x: T) T {
     x
 }

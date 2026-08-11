@@ -16,7 +16,7 @@ pub fn unexpected_token(ctx: &mut Ctx, token: Token, expected: impl std::fmt::Di
         ctx,
         token.span,
         token.module_id,
-        diag::UnexpectedToken,
+        diag::ExpectedToken,
         diag_params! { expected = expected, actual = token.kind },
     );
     unreachable!()
@@ -51,12 +51,8 @@ fn parse_path_segment(parser: &mut Parser) -> Result<PathSegment> {
     let mut span_end = ident.span.end();
     let generic_args = if parser.peek().kind == TokenKind::Less {
         parser.expect(TokenKind::ColonColon)?;
-        let args = parse_generic_args(parser)?;
-        span_end = args
-            .last()
-            .map(|arg| arg.span)
-            .unwrap_or_else(|| ident.span)
-            .end();
+        let (args, end_span) = parse_generic_args(parser)?;
+        span_end = end_span.end();
         Some(args)
     } else {
         None
@@ -69,7 +65,7 @@ fn parse_path_segment(parser: &mut Parser) -> Result<PathSegment> {
     })
 }
 
-fn parse_generic_args(parser: &mut Parser) -> Result<ThinVec<Type>> {
+pub fn parse_generic_args(parser: &mut Parser) -> Result<(ThinVec<Type>, Span)> {
     parser.expect(TokenKind::Less)?;
     let mut args = ThinVec::new();
     while parser.current_token().kind != TokenKind::More {
@@ -80,8 +76,8 @@ fn parse_generic_args(parser: &mut Parser) -> Result<ThinVec<Type>> {
             unexpected_token(parser.ctx, parser.current_token(), "',' or '>'");
         }
     }
-    parser.expect(TokenKind::More)?;
-    Ok(args)
+    let end_span = parser.expect(TokenKind::More)?.span;
+    Ok((args, end_span))
 }
 
 pub fn parse_rename(parser: &mut Parser) -> Result<Option<Ident>> {

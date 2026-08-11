@@ -1,0 +1,12 @@
+// @expect-error unexpected_generic_args
+
+struct Foo<T> {
+    fn f<U>(self: &Self) (T, U) {
+        (1, 2)
+    }
+}
+
+fn main() void {
+    let foo = Foo::<i8> {};
+    Foo::<i8>::f::<i16, bool>(&foo);
+}

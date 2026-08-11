@@ -1,0 +1,18 @@
+trait Bar {
+    fn make() Self;
+}
+
+struct Foo<T> {
+    data: T,
+}
+
+impl Bar for Foo::<i32> {
+    fn make() Self {
+        Foo { data: 1 }
+    }
+}
+
+pub fn main() void {
+    let x: Foo::<i32> = Foo::make();
+    let _ = x;
+}

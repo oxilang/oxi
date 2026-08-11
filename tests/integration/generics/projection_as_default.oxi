@@ -1,0 +1,18 @@
+struct S {}
+
+trait I {
+    type A;
+}
+
+impl I for S {
+    type A = u8;
+}
+
+struct B<T = <S as I>::A> {
+    val: T,
+}
+
+pub fn main() void {
+    let x: B = B { val: 12 };
+    let y: B;
+}

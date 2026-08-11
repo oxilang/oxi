@@ -1,0 +1,13 @@
+struct Vec2<T, U = u8> {
+    x: T,
+    y: U,
+}
+
+type V<T> = Vec2::<T>;
+type V2 = Vec2::<i32, i32>;
+
+fn main() void {
+    let a = V::<i32> { x: 1, y: 2 };
+    let b = V { x: 1, y: 2 };
+    let c = V2 { x: 1, y: 2 };
+}

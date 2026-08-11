@@ -1,0 +1,9 @@
+struct Vec<T, A = i32> {
+    data: T,
+    alloc: A,
+}
+
+pub fn main() void {
+    let v = Vec::<u8> { data: 1, alloc: 2 };
+    let _: Vec::<u8, i32> = v;
+}

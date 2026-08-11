@@ -1,0 +1,19 @@
+// @expect-error expected_path_to_trait
+
+struct S {}
+
+trait I {
+    type A;
+}
+
+impl I for S {
+    type A = u8;
+}
+
+struct B<T = <S as T>::A> {
+    val: T,
+}
+
+pub fn main() void {
+    let x: B = B { val: 12 };
+}

@@ -1,0 +1,5 @@
+// @expect-error failed_to_resolve_path
+
+type MyInt = NonExistentType;
+
+pub fn main() void {}

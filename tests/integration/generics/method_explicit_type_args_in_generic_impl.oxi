@@ -1,0 +1,21 @@
+struct Foo<T> {
+    fn f<U>(self: &Self) (T, U) {
+        (1, 2)
+    }
+}
+
+trait Tr<T> {
+    fn g<U>(baz: U) (T, U);
+}
+
+impl Tr::<u32> for Foo {
+    fn g<U>(baz: U) (u32, U) {
+        (1, 2)
+    }
+}
+
+fn main() void {
+    let foo = Foo::<i8> {};
+    Foo::<i8>::f::<i16>(&foo);
+    Foo::g::<i64>(1);
+}

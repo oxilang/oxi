@@ -1,11 +1,12 @@
 use thin_vec::ThinVec;
 
+use crate::ast::visit::VisitAction;
 use crate::ast::{Literal, Mutability};
 use crate::hir::{BinOp, DefId, HirId, UnOp};
 use crate::interner::Symbol;
 use crate::span::Span;
 use crate::thir::scope::Scope;
-use crate::typeck::{Ty, TyVarId, TypeckOutputs};
+use crate::typeck::{Ty, TyVarId, TyVisitable, TyVisitor, TypeckOutputs};
 use fxhash::{FxHashMap, FxHashSet};
 
 crate::newtype_ids!(ExprId, StmtId, BlockId, LocalVarId);
@@ -72,34 +73,32 @@ impl ThirCrate {
 }
 
 fn check_ty_no_free_vars(ty: &Ty, bound_vars: &FxHashSet<TyVarId>, def_id: DefId, hir_id: HirId) {
-    match ty {
-        Ty::Var(id) => assert!(
-            bound_vars.contains(id),
-            "THIR contains free type variable {id:?} in body {def_id:?} (hir_id: {hir_id:?})"
-        ),
-        Ty::Ptr(inner, _) | Ty::Slice(inner) | Ty::Array(inner, _) => {
-            check_ty_no_free_vars(inner, bound_vars, def_id, hir_id);
-        }
-        Ty::Fn { params, ret } => {
-            for p in params {
-                check_ty_no_free_vars(p, bound_vars, def_id, hir_id);
-            }
-            check_ty_no_free_vars(ret, bound_vars, def_id, hir_id);
-        }
-        Ty::Tuple(elements) => {
-            for e in elements {
-                check_ty_no_free_vars(e, bound_vars, def_id, hir_id);
-            }
-        }
-        Ty::Adt(_, generics) => {
-            if let Some(generics) = generics {
-                for g in generics {
-                    check_ty_no_free_vars(g, bound_vars, def_id, hir_id);
-                }
-            }
-        }
-        Ty::Prim(_) | Ty::Never | Ty::MethodCallee | Ty::Error => {}
+    struct NoFreeVarVisitor<'a> {
+        bound_vars: &'a FxHashSet<TyVarId>,
+        def_id: DefId,
+        hir_id: HirId,
     }
+
+    impl TyVisitor for NoFreeVarVisitor<'_> {
+        fn visit_ty(&mut self, ty: &Ty) -> VisitAction {
+            if let Ty::Var(id) = ty {
+                assert!(
+                    self.bound_vars.contains(id),
+                    "THIR contains free type variable {:?} in body {:?} (hir_id: {:?})",
+                    id,
+                    self.def_id,
+                    self.hir_id
+                );
+            }
+            VisitAction::Continue
+        }
+    }
+
+    ty.visit(&mut NoFreeVarVisitor {
+        bound_vars,
+        def_id,
+        hir_id,
+    });
 }
 
 #[derive(Debug, Clone)]

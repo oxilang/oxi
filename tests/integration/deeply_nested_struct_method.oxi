@@ -1,0 +1,13 @@
+mod foo {
+    mod foo2 {
+        mod foo3 {
+            struct Bar {
+                pub fn baz() void {}
+            }
+        }
+    }
+}
+
+pub fn main() void {
+    foo::foo2::foo3::Bar::baz();
+}

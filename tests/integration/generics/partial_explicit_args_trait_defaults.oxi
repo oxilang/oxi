@@ -1,0 +1,14 @@
+struct Foo {}
+
+trait Multi<T = i16, U = i32, V = i64> {
+    fn apply(self: &Self, v: V) void;
+}
+
+impl Multi::<u8> for Foo {
+    fn apply(self: &Self, v: i64) void {}
+}
+
+pub fn main() void {
+    let f = Foo {};
+    f.apply(7);
+}

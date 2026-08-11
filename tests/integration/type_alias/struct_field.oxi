@@ -1,0 +1,12 @@
+struct Point {
+    x: u32,
+    y: u32,
+}
+
+type Pt = Point;
+
+pub fn main() void {
+    let p: Pt = Point { x: 1, y: 2 };
+    let _ = p.x;
+    let _ = p.y;
+}

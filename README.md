@@ -1,19 +1,17 @@
 # oxic
 
-![CI status](https://github.com/septechx/oxi/actions/workflows/linux.yml/badge.svg)
+![CI status](https://github.com/oxilang/oxi/actions/workflows/linux.yml/badge.svg)
 
 > [!WARNING]
-> This branch currently contains an in-development, non-functional version of the compiler. For the older, functioning version, use the [legacy branch](https://github.com/septechx/oxi/tree/legacy).
+> This branch currently contains an in-development, non-functional version of the compiler. For the older, functioning version, use the [legacy branch](https://github.com/oxilang/oxi/tree/legacy).
 
-Oxic is a compiler for the Oxi programming language.
+Compiler for the Oxi programming language.
 
 ```rust
 import std::print;
 
-pub fn main() isize {
+pub fn main() void {
     print("Hello world\n");
-
-    return 0;
 }
 ```
 

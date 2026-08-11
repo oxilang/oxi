@@ -64,6 +64,11 @@ pub enum ItemKind {
         items: ThinVec<AssocItem>,
         generic_params: Option<GenericParams>,
     },
+    Type {
+        name: Ident,
+        generic_params: Option<GenericParams>,
+        type_: Type,
+    },
     Trait {
         name: Ident,
         items: ThinVec<AssocItem>,
@@ -75,11 +80,11 @@ pub enum ItemKind {
         items: ThinVec<AssocItem>,
     },
     Fn(Fn),
-    Import(ImportTree),
     Module {
         name: Ident,
         body: Option<ThinVec<Item>>,
     },
+    Import(ImportTree),
 }
 
 #[derive(Debug, Clone)]
@@ -114,6 +119,7 @@ pub struct AssocItem {
 #[derive(Debug, Clone)]
 pub enum AssocItemKind {
     Fn(Fn),
+    Type { name: Ident, type_: Option<Type> },
 }
 
 #[derive(Debug, Clone)]
@@ -271,6 +277,28 @@ impl Type {
                     .collect::<Vec<_>>()
                     .join(", ")
             ),
+            TypeKind::Projection {
+                base,
+                trait_,
+                assoc,
+                generic_args,
+            } => format!(
+                "<{} as {}>::{}{}",
+                base.0.display(ctx),
+                trait_.0.display(ctx),
+                ctx.interner.lookup(assoc.value),
+                if let Some(args) = generic_args {
+                    format!(
+                        "::<{}>",
+                        args.iter()
+                            .map(|t| t.display(ctx))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    )
+                } else {
+                    String::new()
+                }
+            ),
             TypeKind::Infer => "_".to_string(),
             TypeKind::Never => "!".to_string(),
         }
@@ -288,6 +316,12 @@ pub enum TypeKind {
         ret: Box<Type>,
     },
     Tuple(ThinVec<Type>),
+    Projection {
+        base: (Path, NodeId),
+        trait_: (Path, NodeId),
+        assoc: Ident,
+        generic_args: Option<ThinVec<Type>>,
+    },
     Infer,
     Never,
 }
@@ -316,7 +350,7 @@ pub enum Visibility {
     Private,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Mutability {
     Constant,
     Mutable,

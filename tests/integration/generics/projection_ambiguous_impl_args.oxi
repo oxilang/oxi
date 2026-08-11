@@ -1,0 +1,24 @@
+// @expect-error unresolved_assoc_type
+
+trait Add<Rhs = Self> {
+    type Output;
+}
+
+struct Foo {}
+
+impl Add::<i32> for Foo {
+    type Output = i32;
+}
+
+impl Add::<u8> for Foo {
+    type Output = u8;
+}
+
+fn consume(x: <Foo as Add>::Output) void {
+    let _ = x;
+}
+
+pub fn main() void {
+    let u: u8 = 1;
+    consume(u);
+}

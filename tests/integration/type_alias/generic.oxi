@@ -1,0 +1,6 @@
+type Pair<T> = (T, T);
+
+pub fn main() void {
+    let p: Pair::<i32> = (1, 2);
+    let _ = p;
+}

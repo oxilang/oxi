@@ -1,0 +1,7 @@
+// @expect-error unresolved_assoc_type
+
+trait Foo {}
+
+pub fn main() void {
+    let bar: <i32 as Foo>::Bar;
+}

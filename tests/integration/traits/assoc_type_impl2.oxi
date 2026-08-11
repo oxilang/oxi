@@ -1,0 +1,23 @@
+pub trait Add {
+    type Rhs;
+    type Output;
+
+    fn add(self: Self, rhs: Self::Rhs) Self::Output;
+}
+
+struct Vec2<T = i32> {
+    x: T,
+    y: T,
+}
+
+impl Add for Vec2 {
+    type Rhs = Self;
+    type Output = Self;
+
+    fn add(self: Self, rhs: Self) Self {
+        Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y
+        }
+    }
+}

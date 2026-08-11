@@ -1,0 +1,4 @@
+// @expect-error recursive_type
+
+type Foo = Bar;
+type Bar = Foo;

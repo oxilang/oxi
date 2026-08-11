@@ -66,6 +66,10 @@ message = "Signature mismatch in method `{method}`"
 level = "Error"
 message = "Type mismatch: expected `{expected}`, found `{found}`"
 
+[type_alias_not_struct]
+level = "Error"
+message = "Type alias `{name}` cannot be used in a struct literal because it does not resolve to a struct"
+
 [recursive_type]
 level = "Error"
 message = "Recursive type detected"
@@ -73,3 +77,11 @@ message = "Recursive type detected"
 [cannot_index]
 level = "Error"
 message = "Cannot index into non-array type `{type}`"
+
+[unresolved_expression]
+level = "Error"
+message = "Could not resolve expression"
+
+[unresolved_assoc_type]
+level = "Error"
+message = "Could not resolve associated type"

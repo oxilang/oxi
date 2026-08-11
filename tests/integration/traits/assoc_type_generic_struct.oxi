@@ -1,0 +1,21 @@
+trait I {
+    type A;
+}
+
+struct Foo<T> {}
+
+impl I for Foo::<u8> {
+    type A = u8;
+}
+
+impl I for Foo::<u16> {
+    type A = u16;
+}
+
+fn main() void {
+    let a: Foo::<u8>::A = 1;
+    let b: Foo::<u16>::A = 2;
+    consume(a, b);
+}
+
+fn consume(x: u8, y: u16) void {}

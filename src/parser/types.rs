@@ -6,14 +6,17 @@ use thin_vec::ThinVec;
 
 use colored::Colorize;
 
-use crate::ast::{Mutability, NodeId, Type, TypeKind};
+use crate::ast::{ExprKind, Mutability, NodeId, Type, TypeKind};
+use crate::diag_params;
+use crate::errors::builders;
 use crate::lexer::token::TokenKind::{self, self as T};
-use crate::parser::Parser;
+use crate::parser::expr::parse_expr;
 use crate::parser::lookups::{
     BindingPower::{self, self as BP},
     BpLookup,
 };
-use crate::parser::utils::parse_path;
+use crate::parser::utils::{parse_generic_args, parse_path};
+use crate::parser::{Parser, diag};
 use crate::span::Span;
 
 type TypeNudHandler = fn(&mut Parser) -> Result<Type>;
@@ -53,6 +56,7 @@ pub fn create_token_type_lookups() {
         type_nud(T::OpenBracket, parse_array_type, &mut nud_lu);
         type_nud(T::OpenParen, parse_parenthesis_type, &mut nud_lu);
         type_nud(T::Amp, parse_pointer_type, &mut nud_lu);
+        type_nud(T::Less, parse_projection_type, &mut nud_lu);
 
         let _ = TYPE_BP_LU.set(bp_lu);
         let _ = TYPE_NUD_LU.set(nud_lu);
@@ -136,58 +140,10 @@ fn parse_array_type(parser: &mut Parser) -> Result<Type> {
     }
 }
 
-pub fn parse_type(parser: &mut Parser, bp: BindingPower) -> Result<Type> {
-    let token_kind = parser.current_token().kind;
-
-    let bp_lu = TYPE_BP_LU.get().expect("Type lookups not initialized");
-    let nud_lu = TYPE_NUD_LU.get().expect("Type lookups not initialized");
-    let led_lu = TYPE_LED_LU.get().expect("Type lookups not initialized");
-
-    let nud_fn = {
-        nud_lu.get(&token_kind).cloned().ok_or_else(|| {
-            anyhow!(
-                format!("Type nud handler expected for token {token_kind:?}")
-                    .red()
-                    .bold()
-            )
-        })?
-    };
-
-    let mut left = nud_fn(parser)?;
-
-    loop {
-        let current_bp = {
-            *bp_lu
-                .get(&parser.current_token().kind)
-                .unwrap_or(&BindingPower::DefaultBp)
-        };
-
-        if current_bp <= bp {
-            break;
-        }
-
-        let token_kind = parser.current_token().kind;
-        let led_fn = {
-            led_lu.get(&token_kind).cloned().ok_or_else(|| {
-                anyhow!(
-                    format!("Type led handler expected for token {token_kind:?}")
-                        .red()
-                        .bold()
-                )
-            })?
-        };
-
-        left = led_fn(parser, left, current_bp)?;
-    }
-
-    Ok(left)
-}
-
 fn parse_parenthesis_type(parser: &mut Parser) -> Result<Type> {
-    let start_token = parser.current_token();
+    let start_token = parser.advance();
 
     let mut types = ThinVec::new();
-    parser.advance();
 
     while parser.current_token().kind != TokenKind::CloseParen {
         types.push(parse_type(parser, BindingPower::DefaultBp)?);
@@ -220,4 +176,95 @@ fn parse_parenthesis_type(parser: &mut Parser) -> Result<Type> {
             node_id: NodeId::default(),
         })
     }
+}
+
+fn parse_projection_type(parser: &mut Parser) -> Result<Type> {
+    let start_token = parser.advance();
+
+    let base = match parse_expr(parser, BindingPower::Primary)?.kind {
+        ExprKind::Path(path) => path,
+        _ => bail!("Expected path for projection base"),
+    };
+    parser.expect(T::As)?;
+    let trait_ = match parse_expr(parser, BindingPower::Primary)?.kind {
+        ExprKind::Path(path) => path,
+        _ => bail!("Expected path for projection trait"),
+    };
+    parser.expect(T::More)?;
+    parser.expect(T::ColonColon)?;
+    let assoc = parser.expect_identifier()?;
+
+    let mut span_end = assoc.span.end();
+    let generic_args = if parser.current_token().kind == T::ColonColon {
+        parser.expect(T::ColonColon)?;
+        let (generic_args, end_span) = parse_generic_args(parser)?;
+        span_end = end_span.end();
+        Some(generic_args)
+    } else {
+        None
+    };
+
+    Ok(Type {
+        kind: TypeKind::Projection {
+            base: (base, NodeId::default()),
+            trait_: (trait_, NodeId::default()),
+            assoc,
+            generic_args,
+        },
+        node_id: NodeId::default(),
+        span: Span::new(start_token.span.start(), span_end),
+    })
+}
+
+pub fn parse_type(parser: &mut Parser, bp: BindingPower) -> Result<Type> {
+    let token = parser.current_token();
+
+    let bp_lu = TYPE_BP_LU.get().expect("Type lookups not initialized");
+    let nud_lu = TYPE_NUD_LU.get().expect("Type lookups not initialized");
+    let led_lu = TYPE_LED_LU.get().expect("Type lookups not initialized");
+
+    let nud_fn = match nud_lu.get(&token.kind).cloned() {
+        Some(nud_fn) => nud_fn,
+        None => {
+            builders::emit_at(
+                parser.ctx,
+                parser.current_token().span,
+                token.module_id,
+                diag::UnexpectedToken,
+                diag_params! { actual = token.kind },
+            );
+            return Err(anyhow!("Unexpected token"));
+        }
+    };
+
+    let mut left = nud_fn(parser)?;
+
+    loop {
+        let current_bp = bp_lu
+            .get(&parser.current_token().kind)
+            .unwrap_or(&BindingPower::DefaultBp);
+
+        if *current_bp <= bp {
+            break;
+        }
+
+        let token = parser.current_token();
+        let led_fn = match led_lu.get(&token.kind).cloned() {
+            Some(led_fn) => led_fn,
+            None => {
+                builders::emit_at(
+                    parser.ctx,
+                    parser.current_token().span,
+                    token.module_id,
+                    diag::UnexpectedToken,
+                    diag_params! { actual = token.kind },
+                );
+                return Err(anyhow!("Unexpected token"));
+            }
+        };
+
+        left = led_fn(parser, left, *current_bp)?;
+    }
+
+    Ok(left)
 }

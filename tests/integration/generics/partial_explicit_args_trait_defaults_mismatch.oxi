@@ -1,0 +1,13 @@
+// @expect-error signature_mismatch
+
+struct Foo {}
+
+trait Multi<T = i16, U = i32, V = i64> {
+    fn apply(self: &Self, v: V) void;
+}
+
+impl Multi::<u8> for Foo {
+    fn apply(self: &Self, v: u16) void {}
+}
+
+pub fn main() void {}

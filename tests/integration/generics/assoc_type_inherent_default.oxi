@@ -1,0 +1,7 @@
+struct Foo<T = u16> {
+    type Bar = T;
+}
+
+pub fn main() void {
+    let x: Foo::Bar = 42;
+}

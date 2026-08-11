@@ -1,0 +1,10 @@
+// @expect-error unexpected_generic_args
+
+struct Pair<T, U = i32> {
+    a: T,
+    b: U,
+}
+
+fn get(p: Pair) i32 {
+    p.a
+}

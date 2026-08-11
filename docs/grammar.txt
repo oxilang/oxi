@@ -42,8 +42,10 @@ Expr -> Lit
       | loop { [Stmt]* }
 Stmt -> Expr;
       | let [mut]? Id [: Ty]? [= Expr]?;
-Assoc -> [pub]? fn Id [< [Id],* >]? ([Id: Ty],*) Ty { [Stmt]* [Expr]? }
+Assoc -> [pub]? type Id [= Ty]?;
+       | [pub]? fn Id [< [Id],* >]? ([Id: Ty],*) Ty { [Stmt]* [Expr]? }
 Item -> [pub]? const Id: Ty = Expr;
+      | [pub]? type Id [< [Id],* >]? = Ty;
       | [pub]? struct Id [< [Id],* >]? { [[pub]? Id: Ty],* [Assoc]* }
       | [pub]? trait Id [< [Id],* >]? { [Assoc]* }
       | impl Path for Path { [Assoc]* }

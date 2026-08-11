@@ -1,0 +1,13 @@
+// @expect-error generic_default_before
+
+trait Foo<T = i32, U> {
+    fn bar(self: &Self, b: U) void;
+}
+
+struct S {}
+
+impl Foo for S {
+    fn bar(self: &Self, b: i32) void {}
+}
+
+pub fn main() void {}

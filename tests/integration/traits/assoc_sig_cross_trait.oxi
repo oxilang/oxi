@@ -1,0 +1,25 @@
+struct S {}
+
+trait TraitB {
+    type Output;
+}
+
+trait TraitA {
+    type Output;
+    fn get() <S as TraitB>::Output;
+}
+
+impl TraitB for S {
+    type Output = u32;
+}
+
+impl TraitA for S {
+    type Output = i32;
+    fn get() u32 {
+        42
+    }
+}
+
+pub fn main() void {
+    let _ = S::get();
+}

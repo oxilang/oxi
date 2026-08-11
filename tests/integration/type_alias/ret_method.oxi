@@ -1,0 +1,18 @@
+struct Counter {
+    n: u32,
+
+    fn get(self: &mut Self) u32 {
+        self.n
+    }
+}
+
+type C = Counter;
+
+fn make() C {
+    Counter { n: 7 }
+}
+
+pub fn main() void {
+    let c = make();
+    let _ = c.get();
+}

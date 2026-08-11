@@ -1,0 +1,7 @@
+// @expect-error recursive_type
+
+struct Foo<T = Foo::Bar> { type Bar = T; }
+
+pub fn main() void {
+    let a: Foo;
+}

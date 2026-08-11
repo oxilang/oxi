@@ -1,0 +1,15 @@
+struct Foo {}
+
+trait A {
+    fn m<T2>(self: &Self, x: T2) T2;
+}
+
+impl A for Foo {
+    fn m<T2>(self: &Self, x: T2) T2 {
+        x
+    }
+}
+
+pub fn main() void {
+    let f = Foo {};
+}

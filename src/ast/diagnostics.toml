@@ -33,3 +33,7 @@ message = "Invalid assignment target"
 [invalid_index_target]
 level = "Error"
 message = "Invalid index target"
+
+[generic_default_before]
+level = "Error"
+message = "Generic parameters with defaults must come after all required parameters"

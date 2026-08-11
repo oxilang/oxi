@@ -1,0 +1,15 @@
+// @expect-error unexpected_generic_args
+
+trait I {
+    type Output;
+}
+
+struct Foo {}
+
+impl I for Foo {
+    type Output = u32;
+}
+
+pub fn main() void {
+    let b: Foo::Output::<bool> = 2;
+}

@@ -1,13 +1,13 @@
+use crate::ast::{Ident, Mutability};
 use thin_vec::ThinVec;
 
-use crate::ast::{Ident, Mutability};
-use crate::hir::{self, PrimTy, QPath, UnOp};
+use crate::hir::{self, DefId, PrimTy, QPath, UnOp};
 use crate::hir::{BinOp, HirId};
 use crate::resolve::Res;
 use crate::span::Span;
 use crate::thir::scope::{Scope, ScopeKind, ScopeTree};
 use crate::thir::*;
-use crate::typeck::{Adjustment, Ty, TyVarId, TypeckOutputs};
+use crate::typeck::{Adjustment, Ty, TypeckOutputs};
 use fxhash::FxHashMap;
 
 pub fn lower_body(
@@ -20,9 +20,14 @@ pub fn lower_body(
     for param in params {
         let local_var = LocalVarId(lowerer.locals.len() as u32);
         lowerer.locals.insert(param.hir_id, local_var);
+        let param_ty = typeck
+            .node_types
+            .get(&param.ty.hir_id)
+            .cloned()
+            .expect("type resolved");
         lowerer.params.push(Param {
             name: param.name,
-            ty: hir_ty_to_ty(&param.ty, &typeck.hir_id_to_ty_var),
+            ty: param_ty,
             hir_id: param.hir_id,
             local_var,
         });
@@ -218,7 +223,12 @@ impl<'a> ThirLowerer<'a> {
         hir_id: HirId,
     ) -> ExprId {
         let source = self.lower_expr(expr);
-        let target_ty = hir_ty_to_ty(target, &self.typeck.hir_id_to_ty_var);
+        let target_ty = self
+            .typeck
+            .node_types
+            .get(&target.hir_id)
+            .cloned()
+            .expect("type resolved");
         self.alloc_expr(
             ExprKind::Cast {
                 source,
@@ -334,14 +344,21 @@ impl<'a> ThirLowerer<'a> {
                     let init_id = init.as_ref().map(|expr| self.lower_expr(expr));
                     let local_var = LocalVarId(self.locals.len() as u32);
                     self.locals.insert(*local, local_var);
-                    let ty = if matches!(ty.kind, hir::TyKind::Infer) {
-                        init.as_ref()
-                            .and_then(|expr| self.typeck.node_types.get(&expr.hir_id))
-                            .cloned()
-                            .unwrap_or(Ty::Error)
-                    } else {
-                        hir_ty_to_ty(ty, &self.typeck.hir_id_to_ty_var)
-                    };
+                    let ty = self
+                        .typeck
+                        .node_types
+                        .get(&ty.hir_id)
+                        .cloned()
+                        .or_else(|| {
+                            if matches!(ty.kind, hir::TyKind::Infer) {
+                                init.as_ref()
+                                    .and_then(|expr| self.typeck.node_types.get(&expr.hir_id))
+                                    .cloned()
+                            } else {
+                                None
+                            }
+                        })
+                        .expect("type resolved");
                     let remainder_scope = self
                         .scope_tree
                         .expect("has scope tree")
@@ -401,11 +418,17 @@ impl<'a> ThirLowerer<'a> {
         span: Span,
         hir_id: HirId,
     ) -> ExprId {
+        // The HIR def might be a type alias; the checked type resolves it to the
+        // underlying struct.
+        let struct_def_id = match ty {
+            Ty::Adt(struct_def_id, _) => *struct_def_id,
+            _ => def_id,
+        };
         let struct_field_info = self
             .typeck
             .coherence
             .struct_fields
-            .get(&def_id)
+            .get(&struct_def_id)
             .expect("struct exists");
 
         let mut ordered = vec![None; struct_field_info.len()];
@@ -418,7 +441,10 @@ impl<'a> ThirLowerer<'a> {
         let fields = ordered.into_iter().flatten().collect();
 
         self.alloc_expr(
-            ExprKind::StructInit { def_id, fields },
+            ExprKind::StructInit {
+                def_id: struct_def_id,
+                fields,
+            },
             ty.clone(),
             span,
             hir_id,
@@ -597,7 +623,7 @@ impl<'a> ThirLowerer<'a> {
     }
 
     fn lower_path(&mut self, qpath: &QPath, ty: &Ty, span: Span, hir_id: HirId) -> ExprId {
-        let QPath::Resolved(path) = qpath else {
+        let QPath::Resolved(_, path) = qpath else {
             unreachable!();
         };
         match &path.res {
@@ -614,56 +640,4 @@ impl<'a> ThirLowerer<'a> {
             _ => unreachable!(),
         }
     }
-}
-
-fn hir_ty_to_ty(hir_ty: &hir::Ty, hir_id_to_ty_var: &FxHashMap<HirId, TyVarId>) -> Ty {
-    let ty = match &hir_ty.kind {
-        hir::TyKind::Error | hir::TyKind::Infer => Ty::Error,
-        hir::TyKind::Never => Ty::Never,
-        hir::TyKind::PrimTy(prim) => Ty::Prim(*prim),
-        hir::TyKind::Ptr(inner, m) => Ty::Ptr(hir_ty_to_ty(inner, hir_id_to_ty_var).into_box(), *m),
-        hir::TyKind::Slice(inner) => Ty::Slice(hir_ty_to_ty(inner, hir_id_to_ty_var).into_box()),
-        hir::TyKind::Array(inner, size) => {
-            Ty::Array(hir_ty_to_ty(inner, hir_id_to_ty_var).into_box(), *size)
-        }
-        hir::TyKind::Fn { params, ret } => Ty::Fn {
-            params: params
-                .iter()
-                .map(|p| hir_ty_to_ty(p, hir_id_to_ty_var))
-                .collect(),
-            ret: hir_ty_to_ty(ret, hir_id_to_ty_var).into_box(),
-        },
-        hir::TyKind::Tuple(elements) => Ty::Tuple(
-            elements
-                .iter()
-                .map(|e| hir_ty_to_ty(e, hir_id_to_ty_var))
-                .collect(),
-        ),
-        hir::TyKind::Path(qpath) => match qpath {
-            QPath::Resolved(path) => match &path.res {
-                Res::Def(def_id) | Res::SelfTyAlias { alias_to: def_id } => {
-                    let generics = path
-                        .segments
-                        .last()
-                        .and_then(|seg| seg.generic_args.as_ref())
-                        .as_ref()
-                        .map(|args| {
-                            args.iter()
-                                .map(|arg| hir_ty_to_ty(arg, hir_id_to_ty_var))
-                                .collect()
-                        });
-                    Ty::Adt(*def_id, generics)
-                }
-                Res::PrimTy(prim) => Ty::Prim(*prim),
-                _ => Ty::Error,
-            },
-            QPath::TypeRelative { .. } => Ty::Error,
-        },
-        hir::TyKind::GenericParam(hir_id, _) => hir_id_to_ty_var
-            .get(hir_id)
-            .map(|&ty_var| Ty::Var(ty_var))
-            .unwrap_or(Ty::Error),
-    };
-    assert!(!ty.is_error());
-    ty
 }

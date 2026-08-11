@@ -1,4 +1,4 @@
-use crate::hir::{DefId, ItemKind, MaybeOwner, Node};
+use crate::hir::{DefId, DefKind, ItemKind, OwnerNode};
 use crate::typeck::Typeck;
 
 impl<'ctx, 'hir, 'res> Typeck<'ctx, 'hir, 'res> {
@@ -8,25 +8,24 @@ impl<'ctx, 'hir, 'res> Typeck<'ctx, 'hir, 'res> {
     }
 
     fn collect_inherent_methods(&mut self) {
-        for (i, owner) in self.krate.owners.iter().enumerate() {
-            let MaybeOwner::Owner(info) = owner else {
-                continue;
-            };
-            let Node::Item(item) = &info.nodes.nodes[0].node else {
-                continue;
-            };
-            let ItemKind::Struct { items, .. } = &item.kind else {
+        for (i, owner) in self.krate.get().owners.iter().enumerate() {
+            let Some(ItemKind::Struct { items, .. }) = owner
+                .as_owner()
+                .map(|info| info.nodes.node())
+                .and_then(|node| match node {
+                    OwnerNode::Item(item) => Some(&item.kind),
+                    _ => None,
+                })
+            else {
                 continue;
             };
             let def_id = DefId(i as u32);
-            let entry = self.inherent_methods.entry(def_id).or_default();
+            let entry = self.coherence.inherent_methods.entry(def_id).or_default();
             for &item in items {
-                entry.insert(
-                    self.resolver.defs[item.0 as usize]
-                        .name
-                        .expect("item has name"),
-                    item,
-                );
+                if self.resolver.def(item).kind != DefKind::AssocFn {
+                    continue;
+                }
+                entry.insert(self.resolver.def(item).name.expect("item has name"), item);
             }
         }
     }
@@ -34,23 +33,30 @@ impl<'ctx, 'hir, 'res> Typeck<'ctx, 'hir, 'res> {
     fn collect_trait_methods(&mut self) {
         for ((trait_def_id, struct_def_id), impl_def_ids) in self.coherence.impls.iter() {
             for &impl_def_id in impl_def_ids {
-                let Some(MaybeOwner::Owner(info)) = self.krate.owner(impl_def_id) else {
+                let Some(ItemKind::Impl { items, .. }) =
+                    self.krate.get().owner(impl_def_id).and_then(|owner| {
+                        owner
+                            .as_owner()
+                            .map(|info| info.nodes.node())
+                            .and_then(|node| match node {
+                                OwnerNode::Item(item) => Some(&item.kind),
+                                _ => None,
+                            })
+                    })
+                else {
                     continue;
                 };
-                let Node::Item(item) = &info.nodes.nodes[0].node else {
-                    continue;
-                };
-                let ItemKind::Impl { items, .. } = &item.kind else {
-                    continue;
-                };
-                let entry = self.trait_methods.entry(*struct_def_id).or_default();
+                let entry = self
+                    .coherence
+                    .struct_trait_methods
+                    .entry(*struct_def_id)
+                    .or_default();
                 for &item in items {
+                    if self.resolver.def(item).kind != DefKind::AssocFn {
+                        continue;
+                    }
                     entry
-                        .entry(
-                            self.resolver.defs[item.0 as usize]
-                                .name
-                                .expect("item has name"),
-                        )
+                        .entry(self.resolver.def(item).name.expect("item has name"))
                         .or_default()
                         .push((*trait_def_id, item));
                 }

@@ -1,0 +1,14 @@
+struct Foo<T> {
+    data: T,
+
+    type A = Self;
+
+    fn get() Self::A {
+        Foo { data: 1 }
+    }
+}
+
+pub fn main() void {
+    let x: Foo::<i32> = Foo::get();
+    let _ = x;
+}

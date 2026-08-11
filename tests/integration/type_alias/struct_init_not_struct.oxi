@@ -1,0 +1,7 @@
+// @expect-error type_alias_not_struct
+
+type V = isize;
+
+fn main() void {
+    let vec = V { x: 1, y: 2 };
+}

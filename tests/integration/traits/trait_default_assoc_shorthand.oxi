@@ -1,0 +1,17 @@
+trait Add<T = i32> {
+    type Result;
+}
+
+struct Foo {}
+
+impl Add::<i32> for Foo {
+    type Result = i32;
+}
+
+pub fn main() void {
+    let s: Foo::Result = 1;
+    let r: <Foo as Add::<i32> >::Result = s;
+    consume_i32(r);
+}
+
+fn consume_i32(x: i32) void {}

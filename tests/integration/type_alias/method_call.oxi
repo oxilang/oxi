@@ -1,0 +1,17 @@
+struct Counter {
+    n: u32,
+
+    fn get(self: &mut Self) u32 {
+        self.n
+    }
+}
+
+type C = Counter;
+type Counter2<T> = Counter;
+
+pub fn main() void {
+    let mut c: C = Counter { n: 42 };
+    let _ = c.get();
+    let mut c2: Counter2::<u32> = Counter { n: 1 };
+    let _ = c2.get();
+}

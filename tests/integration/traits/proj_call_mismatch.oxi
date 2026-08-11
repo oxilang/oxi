@@ -1,0 +1,20 @@
+// @expect-error type_mismatch
+
+trait HasOut {
+    type Output;
+}
+
+struct S {}
+
+impl HasOut for S {
+    type Output = u32;
+}
+
+fn returns_proj() <S as HasOut>::Output {
+    42
+}
+
+pub fn main() void {
+    let x: bool = returns_proj();
+    let _ = x;
+}

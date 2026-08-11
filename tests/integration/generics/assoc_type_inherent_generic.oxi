@@ -1,0 +1,11 @@
+struct Baz<T> {
+    inner: T
+}
+
+struct Foo<T> {
+    type Bar = Baz::<T>;
+}
+
+fn foo() void {
+    let x: Foo::<u8>::Bar = Baz { inner: 1 };
+}

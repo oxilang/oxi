@@ -49,7 +49,9 @@ pub fn lower_thir(
                 _ => {}
             },
             Node::AssocItem(assoc) => {
-                let AssocItemKind::Fn(fun) = &assoc.kind;
+                let AssocItemKind::Fn(fun) = &assoc.kind else {
+                    continue;
+                };
                 if let Some(body_id) = fun.body_id {
                     let body = info.nodes.body(body_id).expect("body exists");
                     let thir_body = lower_body(&fun.decl.params, body, typeck, scope_tree);

@@ -8,21 +8,22 @@ use crate::span::Span;
 use crate::thir::scope::{Scope, ScopeKind, ScopeTree};
 use crate::thir::*;
 use crate::typeck::{Adjustment, Ty, TyVarId, TypeckOutputs};
+
 use fxhash::FxHashMap;
 
 pub fn lower_body(
-    params: &ThinVec<hir::Param>,
     body: &hir::Body,
+    inputs: &ThinVec<hir::Ty>,
     typeck: &TypeckOutputs,
     scope_tree: Option<&ScopeTree>,
 ) -> ThirBody {
     let mut lowerer = ThirLowerer::new(typeck, scope_tree);
-    for param in params {
+    for (param, input) in body.params.iter().zip(inputs.iter()) {
         let local_var = LocalVarId(lowerer.locals.len() as u32);
         lowerer.locals.insert(param.hir_id, local_var);
         lowerer.params.push(Param {
             name: param.name,
-            ty: hir_ty_to_ty(&param.ty, &typeck.hir_id_to_ty_var),
+            ty: hir_ty_to_ty(input, &typeck.hir_id_to_ty_var),
             hir_id: param.hir_id,
             local_var,
         });
@@ -91,13 +92,6 @@ impl<'a> ThirLowerer<'a> {
             .get(&hir_id)
             .expect("type exists")
             .clone()
-    }
-
-    fn is_block_expr(kind: &hir::ExprKind) -> bool {
-        matches!(
-            kind,
-            hir::ExprKind::Block(_) | hir::ExprKind::If { .. } | hir::ExprKind::Loop(_)
-        )
     }
 
     fn lower_expr(&mut self, expr: &hir::Expr) -> ExprId {
@@ -290,38 +284,22 @@ impl<'a> ThirLowerer<'a> {
     fn lower_block_expr(&mut self, block: &hir::Block) -> ExprId {
         let block_id = self.lower_block(block);
         let ty = block
-            .stmts
-            .last()
-            .and_then(|expr| match &expr.kind {
-                hir::StmtKind::Expr(expr) => Some(expr),
-                _ => None,
-            })
-            .map(|expr| self.lookup_ty(expr.hir_id))
+            .tail
+            .as_ref()
+            .map(|tail| self.lookup_ty(tail.hir_id))
             .unwrap_or_else(|| Ty::Prim(PrimTy::Void));
         self.alloc_expr(ExprKind::Block(block_id), ty, block.span, block.hir_id)
     }
 
     fn lower_block(&mut self, block: &hir::Block) -> BlockId {
         let mut stmt_ids = ThinVec::with_capacity(block.stmts.len());
-        let mut tail = None;
 
-        for (i, stmt) in block.stmts.iter().enumerate() {
-            let is_last = i + 1 == block.stmts.len();
+        for stmt in block.stmts.iter() {
             match &stmt.kind {
-                hir::StmtKind::Expr(expr) if is_last => {
-                    tail = Some(self.lower_expr(expr));
-                }
-                hir::StmtKind::Expr(expr) if Self::is_block_expr(&expr.kind) => {
+                hir::StmtKind::Expr(expr) => {
                     let expr_id = self.lower_expr(expr);
                     let stmt_id =
-                        self.alloc_stmt(StmtKind::Semi { expr: expr_id }, stmt.span, stmt.hir_id);
-                    stmt_ids.push(stmt_id);
-                }
-                hir::StmtKind::Expr(_) => unreachable!(),
-                hir::StmtKind::Semi(expr) => {
-                    let expr_id = self.lower_expr(expr);
-                    let stmt_id =
-                        self.alloc_stmt(StmtKind::Semi { expr: expr_id }, stmt.span, stmt.hir_id);
+                        self.alloc_stmt(StmtKind::Expr { expr: expr_id }, stmt.span, stmt.hir_id);
                     stmt_ids.push(stmt_id);
                 }
                 hir::StmtKind::Let {
@@ -363,11 +341,13 @@ impl<'a> ThirLowerer<'a> {
             }
         }
 
+        let tail = block.tail.as_ref().map(|tail| self.lower_expr(tail));
+
         let region_scope = Scope::new(block.hir_id.local_id, ScopeKind::Node);
         self.alloc_block(Block {
             region_scope,
             stmts: stmt_ids,
-            expr: tail,
+            tail,
         })
     }
 

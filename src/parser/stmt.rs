@@ -340,10 +340,11 @@ pub fn parse_fn_decl_item(
         TokenKind::OpenCurly => {
             let open_brace_span = parser.current_token().span;
             parser.advance();
-            let (stmts, body_span) = parse_body(parser, open_brace_span)?;
+            let (stmts, tail, body_span) = parse_body(parser, open_brace_span)?;
             end_span = body_span;
             body = Some(Block {
                 stmts,
+                tail,
                 span: body_span,
             });
         }
@@ -560,16 +561,7 @@ fn parse_import_tree_list(parser: &mut Parser) -> Result<ThinVec<ImportTree>> {
     Ok(items)
 }
 
-pub fn parse_stmt(parser: &mut Parser) -> Result<Stmt> {
-    let current_kind = parser.current_token().kind;
-
-    match current_kind {
-        TokenKind::Let => parse_let_stmt(parser),
-        _ => parse_expr_stmt(parser),
-    }
-}
-
-fn parse_let_stmt(parser: &mut Parser) -> Result<Stmt> {
+pub(crate) fn parse_let_stmt(parser: &mut Parser) -> Result<Stmt> {
     let let_token = parser.advance();
     let mut type_ = Type {
         kind: TypeKind::Infer,
@@ -624,31 +616,6 @@ fn parse_let_stmt(parser: &mut Parser) -> Result<Stmt> {
         },
         node_id: NodeId::default(),
         span,
-    })
-}
-
-fn parse_expr_stmt(parser: &mut Parser) -> Result<Stmt> {
-    let expr = parse_expr(parser, BindingPower::DefaultBp)?;
-
-    let mut has_semicolon = false;
-    let mut semi_span = expr.span;
-    if parser.current_token().kind == TokenKind::Semicolon {
-        has_semicolon = true;
-        semi_span = parser.current_token().span;
-        parser.advance();
-    }
-
-    let span = Span::new(expr.span.start(), semi_span.end());
-    let kind = if has_semicolon {
-        StmtKind::Semi(expr)
-    } else {
-        StmtKind::Expr(expr)
-    };
-
-    Ok(Stmt {
-        kind,
-        span,
-        node_id: NodeId::default(),
     })
 }
 

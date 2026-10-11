@@ -98,39 +98,12 @@ impl AstValidator {
     }
 
     fn validate_block(&mut self, block: &Block) {
-        let stmts = &block.stmts;
-        let len = stmts.len();
-
-        for (i, stmt) in stmts.iter().enumerate() {
-            if let StmtKind::Expr(expr) = &stmt.kind {
-                if Self::is_block_expr(&expr.kind) {
-                    continue;
-                }
-
-                if i != len - 1 {
-                    with_ctx_mut(|ctx| {
-                        builders::emit_at(
-                            ctx,
-                            stmt.span,
-                            self.module_id,
-                            diag::TailExprNotAtTail,
-                            diag_params! {},
-                        );
-                    });
-                }
-            }
-        }
-
-        for stmt in stmts.iter() {
+        for stmt in block.stmts.iter() {
             stmt.visit(self);
         }
-    }
-
-    fn is_block_expr(kind: &ExprKind) -> bool {
-        matches!(
-            kind,
-            ExprKind::Block(_) | ExprKind::If { .. } | ExprKind::While { .. } | ExprKind::Loop(_)
-        )
+        if let Some(tail) = &block.tail {
+            tail.visit(self);
+        }
     }
 
     fn is_lvalue(expr: &Expr) -> bool {

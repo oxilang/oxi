@@ -409,7 +409,7 @@ impl<'a, 'res, 'ctx> Visitor for LateResolutionVisitor<'a, 'res, 'ctx> {
                 let rib = self.ribs.last_mut().expect("rib exists");
                 rib.bindings.insert(sym, Res::Local(stmt.node_id));
             }
-            StmtKind::Expr(expr) | StmtKind::Semi(expr) => expr.visit(self),
+            StmtKind::Expr(expr) => expr.visit(self),
         }
 
         VisitAction::SkipChildren

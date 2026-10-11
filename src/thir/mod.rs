@@ -34,7 +34,7 @@ pub fn lower_thir(
                 ItemKind::Fn(fun) => {
                     if let Some(body_id) = fun.body_id {
                         let body = info.nodes.body(body_id).expect("body exists");
-                        let thir_body = lower_body(&fun.decl.params, body, typeck, scope_tree);
+                        let thir_body = lower_body(body, &fun.decl.params, typeck, scope_tree);
                         thir.bodies.insert(def_id, thir_body);
                     }
                 }
@@ -43,7 +43,7 @@ pub fn lower_thir(
                     ..
                 } => {
                     let body = info.nodes.body(*body_id).expect("body exists");
-                    let thir_body = lower_body(&thin_vec![], body, typeck, scope_tree);
+                    let thir_body = lower_body(body, &thin_vec![], typeck, scope_tree);
                     thir.bodies.insert(def_id, thir_body);
                 }
                 _ => {}
@@ -52,7 +52,7 @@ pub fn lower_thir(
                 let AssocItemKind::Fn(fun) = &assoc.kind;
                 if let Some(body_id) = fun.body_id {
                     let body = info.nodes.body(body_id).expect("body exists");
-                    let thir_body = lower_body(&fun.decl.params, body, typeck, scope_tree);
+                    let thir_body = lower_body(body, &fun.decl.params, typeck, scope_tree);
                     thir.bodies.insert(def_id, thir_body);
                 }
             }

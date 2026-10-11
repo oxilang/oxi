@@ -10,7 +10,7 @@ use crate::diag_params;
 use crate::errors::builders;
 use crate::hir::{
     self, AssocItemKind, BinOp, Block, Body, DefId, Expr, ExprKind, FloatTy, FnDecl, HirId, IntTy,
-    ItemKind, MaybeOwner, ModuleId, Node, PrimTy, QPath, Stmt, StmtKind, UintTy, UnOp,
+    ItemKind, MaybeOwner, ModuleId, Node, PrimTy, QPath, StmtKind, UintTy, UnOp,
 };
 use crate::interner::{Interner, Symbol};
 use crate::resolve::{Res, ResolverOutputs};
@@ -34,12 +34,9 @@ struct BlockTyRes {
 fn tail_span(expr: &Expr) -> Span {
     match &expr.kind {
         ExprKind::Block(block) => block
-            .stmts
-            .last()
-            .and_then(|stmt| match &stmt.kind {
-                StmtKind::Expr(expr) => Some(expr.span),
-                _ => None,
-            })
+            .tail
+            .as_ref()
+            .map(|tail| tail.span)
             .unwrap_or(expr.span),
         _ => expr.span,
     }
@@ -235,9 +232,9 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
 
     fn check_fn_body(&mut self, decl: &FnDecl, body: &Body) {
         self.env.push();
-        for param in &decl.params {
-            let param_ty = Ty::from_hir(self.icx, &param.ty);
-            self.node_types.insert(param.ty.hir_id, param_ty.clone());
+        for (param, input) in body.params.iter().zip(decl.params.iter()) {
+            let param_ty = Ty::from_hir(self.icx, input);
+            self.node_types.insert(input.hir_id, param_ty.clone());
             let scheme = Scheme::monomorphic(param_ty);
             self.local_schemes.insert(param.hir_id, scheme.clone());
             self.env.insert(param.hir_id, scheme);
@@ -293,9 +290,12 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
 
     fn check_return_values_in_block(&mut self, block: &Block, expected: &Ty) {
         for stmt in &block.stmts {
-            if let StmtKind::Expr(expr) | StmtKind::Semi(expr) = &stmt.kind {
+            if let StmtKind::Expr(expr) = &stmt.kind {
                 self.check_return_values(expr, expected, stmt.span);
             }
+        }
+        if let Some(tail) = &block.tail {
+            self.check_return_values(tail, expected, tail.span);
         }
     }
 
@@ -861,7 +861,6 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
     fn check_block(&mut self, block: &Block) -> BlockTyRes {
         self.env.push();
         let mut break_ty = None;
-        let mut last_ty = Ty::Prim(PrimTy::Void);
         let mut diverged = false;
         for stmt in &block.stmts {
             if diverged {
@@ -875,7 +874,7 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
                             self.check_expr(init);
                         }
                     }
-                    StmtKind::Expr(expr) | StmtKind::Semi(expr) => {
+                    StmtKind::Expr(expr) => {
                         self.check_expr(expr);
                     }
                 }
@@ -914,40 +913,40 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
                     }
                 }
                 StmtKind::Expr(expr) => {
-                    last_ty = self.check_expr(expr);
                     self.collect_break_ty_from_expr(expr, &mut break_ty, expr.span);
-                    if matches!(last_ty, Ty::Never) {
+                    let expr_ty = self.check_expr(expr);
+                    if expr_ty == Ty::Never {
                         diverged = true;
-                    }
-                }
-                StmtKind::Semi(expr) => {
-                    self.collect_break_ty_from_expr(expr, &mut break_ty, expr.span);
-                    let expr = self.check_expr(expr);
-                    if matches!(expr, Ty::Never) {
-                        last_ty = Ty::Never;
-                        diverged = true;
-                    } else {
-                        last_ty = Ty::Prim(PrimTy::Void)
                     }
                 }
             }
         }
+        let mut tail_ty = Ty::Prim(PrimTy::Void);
+        if diverged {
+            if let Some(tail) = &block.tail {
+                self.check_expr(tail);
+            }
+            tail_ty = Ty::Never;
+        } else if let Some(tail) = &block.tail {
+            tail_ty = self.check_expr(tail);
+            self.collect_break_ty_from_expr(tail, &mut break_ty, tail.span);
+        }
         self.env.pop();
         BlockTyRes {
-            tail: if diverged { Ty::Never } else { last_ty },
+            tail: tail_ty,
             early: break_ty,
         }
     }
 
-    fn collect_break_ty_from_stmts(
+    fn collect_break_ty_from_block(
         &mut self,
-        stmts: &[Stmt],
+        block: &Block,
         break_ty: &mut Option<Ty>,
         span: Span,
     ) {
-        for stmt in stmts {
+        for stmt in &block.stmts {
             match &stmt.kind {
-                StmtKind::Expr(expr) | StmtKind::Semi(expr) => {
+                StmtKind::Expr(expr) => {
                     self.collect_break_ty_from_expr(expr, break_ty, span);
                 }
                 StmtKind::Let { init, .. } => {
@@ -956,6 +955,9 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
                     }
                 }
             }
+        }
+        if let Some(tail) = &block.tail {
+            self.collect_break_ty_from_expr(tail, break_ty, span);
         }
     }
 
@@ -986,15 +988,14 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
                 else_branch,
                 ..
             } => {
-                self.collect_break_ty_from_stmts(&then_branch.stmts, break_ty, span);
+                self.collect_break_ty_from_block(then_branch, break_ty, span);
                 if let Some(else_expr) = else_branch {
                     self.collect_break_ty_from_expr(else_expr, break_ty, span);
                 }
             }
             ExprKind::Block(block) => {
-                self.collect_break_ty_from_stmts(&block.stmts, break_ty, span);
+                self.collect_break_ty_from_block(block, break_ty, span);
             }
-            ExprKind::Loop(_) => {}
             _ => {}
         }
     }

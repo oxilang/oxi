@@ -180,7 +180,7 @@ pub struct StructField {
 
 #[derive(Debug, Clone)]
 pub struct FnDecl {
-    pub params: ThinVec<Param>,
+    pub params: ThinVec<Ty>,
     pub ret: Ty,
 }
 
@@ -201,7 +201,6 @@ pub struct Fn {
 pub struct Param {
     pub hir_id: HirId,
     pub name: Symbol,
-    pub ty: Ty,
     pub span: Span,
 }
 
@@ -215,6 +214,7 @@ pub struct GenericParam {
 
 #[derive(Debug, Clone)]
 pub struct Body {
+    pub params: ThinVec<Param>,
     pub value: Expr,
 }
 
@@ -342,11 +342,9 @@ pub struct Stmt {
 
 #[derive(Debug, Clone)]
 pub enum StmtKind {
-    /// Expression without trailing semicolon (tail position)
+    /// Expression
     Expr(Expr),
-    /// Expression with trailing semicolon
-    Semi(Expr),
-    /// let-binding
+    /// `let` binding
     Let {
         name: Symbol,
         ty: Ty,
@@ -360,6 +358,7 @@ pub enum StmtKind {
 pub struct Block {
     pub hir_id: HirId,
     pub stmts: ThinVec<Stmt>,
+    pub tail: Option<Box<Expr>>,
     pub span: Span,
 }
 

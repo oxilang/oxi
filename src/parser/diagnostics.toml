@@ -61,3 +61,7 @@ message = "Duplicate modifier `{modifier}`"
 [modifier_must_appear_before]
 level = "Error"
 message = "Modifier `{modifier}` must appear before `{previous}`"
+
+[tail_expr_not_at_tail]
+level = "Error"
+message = "Expression without semicolon must be at the end of a block"

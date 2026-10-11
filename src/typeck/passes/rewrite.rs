@@ -1,4 +1,4 @@
-use crate::hir::{BodyId, Expr, ExprKind, HirId, MaybeOwner, QPath, Stmt, StmtKind};
+use crate::hir::{BodyId, Expr, ExprKind, HirId, MaybeOwner, QPath, StmtKind};
 use crate::span::Span;
 use crate::typeck::{MemberRes, Typeck};
 use fxhash::FxHashMap;
@@ -95,9 +95,7 @@ fn rewrite_expr(expr: &mut Expr, member_res: &FxHashMap<HirId, MemberRes>) {
             }
         }
         ExprKind::Block(block) => {
-            for stmt in &mut block.stmts {
-                rewrite_stmt(stmt, member_res);
-            }
+            rewrite_block(block, member_res);
         }
         ExprKind::If {
             cond,
@@ -105,17 +103,13 @@ fn rewrite_expr(expr: &mut Expr, member_res: &FxHashMap<HirId, MemberRes>) {
             else_branch,
         } => {
             rewrite_expr(cond, member_res);
-            for stmt in &mut then_branch.stmts {
-                rewrite_stmt(stmt, member_res);
-            }
+            rewrite_block(then_branch, member_res);
             if let Some(else_branch) = else_branch {
                 rewrite_expr(else_branch, member_res);
             }
         }
         ExprKind::Loop(block) => {
-            for stmt in &mut block.stmts {
-                rewrite_stmt(stmt, member_res);
-            }
+            rewrite_block(block, member_res);
         }
         ExprKind::Break(expr) | ExprKind::Return(expr) => {
             if let Some(expr) = expr {
@@ -155,15 +149,20 @@ fn rewrite_expr(expr: &mut Expr, member_res: &FxHashMap<HirId, MemberRes>) {
     }
 }
 
-fn rewrite_stmt(stmt: &mut Stmt, member_res: &FxHashMap<HirId, MemberRes>) {
-    match &mut stmt.kind {
-        StmtKind::Expr(expr) | StmtKind::Semi(expr) => {
-            rewrite_expr(expr, member_res);
-        }
-        StmtKind::Let { init, .. } => {
-            if let Some(init) = init {
-                rewrite_expr(init, member_res);
+fn rewrite_block(block: &mut crate::hir::Block, member_res: &FxHashMap<HirId, MemberRes>) {
+    for stmt in &mut block.stmts {
+        match &mut stmt.kind {
+            StmtKind::Expr(expr) => {
+                rewrite_expr(expr, member_res);
+            }
+            StmtKind::Let { init, .. } => {
+                if let Some(init) = init {
+                    rewrite_expr(init, member_res);
+                }
             }
         }
+    }
+    if let Some(tail) = &mut block.tail {
+        rewrite_expr(tail, member_res);
     }
 }

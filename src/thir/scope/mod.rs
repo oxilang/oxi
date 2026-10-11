@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 mod builder;
 
 use crate::hir::{DefId, HirId, ItemLocalId};

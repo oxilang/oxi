@@ -336,10 +336,12 @@ impl Visitable for Fn {
 impl Visitable for Block {
     fn visit(&self, visitor: &mut impl Visitor) {
         self.stmts.visit(visitor);
+        self.tail.visit(visitor);
     }
 
     fn visit_mut(&mut self, visitor: &mut impl VisitorMut) {
         self.stmts.visit_mut(visitor);
+        self.tail.visit_mut(visitor);
     }
 }
 
@@ -376,7 +378,6 @@ impl Visitable for Stmt {
         match visitor.visit_stmt(self) {
             VisitAction::Continue => match &self.kind {
                 StmtKind::Expr(expr) => expr.visit(visitor),
-                StmtKind::Semi(expr) => expr.visit(visitor),
                 StmtKind::Let {
                     name: _,
                     ty,
@@ -397,7 +398,6 @@ impl Visitable for Stmt {
         match visitor.visit_stmt(self) {
             VisitAction::Continue => match &mut self.kind {
                 StmtKind::Expr(expr) => expr.visit_mut(visitor),
-                StmtKind::Semi(expr) => expr.visit_mut(visitor),
                 StmtKind::Let {
                     name: _,
                     ty,

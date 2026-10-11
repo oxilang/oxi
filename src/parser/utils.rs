@@ -2,12 +2,15 @@ use anyhow::Result;
 use thin_vec::ThinVec;
 
 use crate::{
-    ast::{Ident, Path, PathSegment, Stmt, Type},
+    ast::{Expr, ExprKind, Ident, NodeId, Path, PathSegment, Stmt, StmtKind, Type},
     context::Ctx,
     diag_params,
     errors::builders,
     lexer::token::{Token, TokenKind},
-    parser::{Parser, diag, lookups::BindingPower, stmt::parse_stmt, types::parse_type},
+    parser::{
+        Parser, diag, expr::parse_expr, lookups::BindingPower, stmt::parse_let_stmt,
+        types::parse_type,
+    },
     span::Span,
 };
 
@@ -93,17 +96,74 @@ pub fn parse_rename(parser: &mut Parser) -> Result<Option<Ident>> {
     }
 }
 
-pub fn parse_body(parser: &mut Parser, start_span: Span) -> Result<(ThinVec<Stmt>, Span)> {
-    let mut body = ThinVec::new();
+pub fn is_block_expr(kind: &ExprKind) -> bool {
+    matches!(
+        kind,
+        ExprKind::Block(_) | ExprKind::If { .. } | ExprKind::While { .. } | ExprKind::Loop(_)
+    )
+}
+
+pub fn parse_body(
+    parser: &mut Parser,
+    start_span: Span,
+) -> Result<(ThinVec<Stmt>, Option<Box<Expr>>, Span)> {
+    let mut stmts = ThinVec::new();
+    let mut tail: Option<Box<Expr>> = None;
     loop {
         if parser.current_token().kind == TokenKind::CloseCurly {
             break;
         }
 
-        body.push(parse_stmt(parser)?);
+        if parser.current_token().kind == TokenKind::Let {
+            stmts.push(parse_let_stmt(parser)?);
+            continue;
+        }
+
+        let expr = parse_expr(parser, BindingPower::DefaultBp)?;
+
+        if parser.current_token().kind == TokenKind::Semicolon {
+            let semi_span = parser.current_token().span;
+            parser.advance();
+            let span = Span::new(expr.span.start(), semi_span.end());
+            stmts.push(Stmt {
+                kind: StmtKind::Expr(expr),
+                span,
+                node_id: NodeId::default(),
+            });
+            continue;
+        }
+
+        if parser.current_token().kind == TokenKind::CloseCurly {
+            tail = Some(Box::new(expr));
+            break;
+        }
+
+        if is_block_expr(&expr.kind) {
+            let span = expr.span;
+            stmts.push(Stmt {
+                kind: StmtKind::Expr(expr),
+                span,
+                node_id: NodeId::default(),
+            });
+            continue;
+        }
+
+        builders::emit_at(
+            parser.ctx,
+            expr.span,
+            parser.current_token().module_id,
+            diag::TailExprNotAtTail,
+            diag_params! {},
+        );
+        let span = expr.span;
+        stmts.push(Stmt {
+            kind: StmtKind::Expr(expr),
+            span,
+            node_id: NodeId::default(),
+        });
     }
     let end_token = parser.expect(TokenKind::CloseCurly)?;
     let span = Span::new(start_span.start(), end_token.span.end());
 
-    Ok((body, span))
+    Ok((stmts, tail, span))
 }

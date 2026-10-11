@@ -10,10 +10,6 @@ message = "Extern functions cannot have a body"
 level = "Error"
 message = "Non-extern function must have a body"
 
-[tail_expr_not_at_tail]
-level = "Error"
-message = "Expression without semicolon must be at the end of a block"
-
 [duplicate_field]
 level = "Error"
 message = "Duplicate field `{field}` in struct instantiation"

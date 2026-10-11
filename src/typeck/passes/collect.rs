@@ -183,7 +183,7 @@ impl<'ctx, 'hir, 'res> Typeck<'ctx, 'hir, 'res> {
         let params: ThinVec<Ty> = decl
             .params
             .iter()
-            .map(|param| Ty::from_hir(icx, &param.ty))
+            .map(|param| Ty::from_hir(icx, param))
             .collect();
         let ret = Ty::from_hir(icx, &decl.ret).into_box();
         Ty::Fn { params, ret }

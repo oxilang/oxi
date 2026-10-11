@@ -323,11 +323,14 @@ impl<'a, 'ctx> AstLoweringContext<'a, 'ctx> {
 
         let local_id = self.next_local_id();
         let body_id = BodyId(local_id);
-        let bodies = {
-            let mut bodies = FxHashMap::default();
-            bodies.insert(body_id, Body { value: init });
-            bodies
-        };
+        let mut bodies = FxHashMap::default();
+        bodies.insert(
+            body_id,
+            Body {
+                params: ThinVec::new(),
+                value: init,
+            },
+        );
 
         OwnerInfo {
             nodes: OwnerNodes {
@@ -386,26 +389,24 @@ impl<'a, 'ctx> AstLoweringContext<'a, 'ctx> {
                         .collect()
                 });
 
-        let params: ThinVec<Param> = f
-            .parameters
-            .iter()
-            .map(|(name, ty, node_id)| {
-                let param_hir_id = self.next_hir_id();
-                self.register_local(*node_id, param_hir_id);
-                Param {
-                    hir_id: param_hir_id,
-                    name: name.value,
-                    ty: self.lower_type(ty),
-                    span: name.span,
-                }
-            })
-            .collect();
+        let mut params: ThinVec<Ty> = ThinVec::new();
+        let mut body_params: ThinVec<Param> = ThinVec::new();
+        for (name, ty, node_id) in f.parameters.iter() {
+            let param_hir_id = self.next_hir_id();
+            self.register_local(*node_id, param_hir_id);
+            params.push(self.lower_type(ty));
+            body_params.push(Param {
+                hir_id: param_hir_id,
+                name: name.value,
+                span: name.span,
+            });
+        }
 
         let ret = self.lower_type(&f.return_type);
 
         let mut bodies = FxHashMap::default();
         let body_id = f.body.as_ref().map(|block| {
-            let (body_id, body) = self.lower_block_body(block);
+            let (body_id, body) = self.lower_block_body(block, body_params);
             bodies.insert(body_id, body);
             body_id
         });
@@ -447,23 +448,34 @@ impl<'a, 'ctx> AstLoweringContext<'a, 'ctx> {
         }
     }
 
-    fn lower_block_body(&mut self, block: &ast::Block) -> (BodyId, Body) {
+    fn lower_block_body(&mut self, block: &ast::Block, params: ThinVec<Param>) -> (BodyId, Body) {
         let stmts = block
             .stmts
             .iter()
             .map(|stmt| self.lower_stmt(stmt))
             .collect();
+        let tail = block
+            .tail
+            .as_ref()
+            .map(|tail| self.lower_expr(tail).into_box());
         let block_expr = Expr {
             hir_id: self.next_hir_id(),
             kind: ExprKind::Block(Block {
                 stmts,
+                tail,
                 span: block.span,
                 hir_id: self.next_hir_id(),
             }),
             span: block.span,
         };
         let local_id = self.next_local_id();
-        (BodyId(local_id), Body { value: block_expr })
+        (
+            BodyId(local_id),
+            Body {
+                params,
+                value: block_expr,
+            },
+        )
     }
 
     fn with_owner(

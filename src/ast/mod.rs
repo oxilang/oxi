@@ -91,10 +91,7 @@ pub struct Stmt {
 
 #[derive(Debug, Clone)]
 pub enum StmtKind {
-    /// Expression without a trailing semicolon (returns value)
     Expr(Expr),
-    /// Expression with a trailing semicolon
-    Semi(Expr),
     Let {
         name: Ident,
         ty: Type,
@@ -325,6 +322,7 @@ pub enum Mutability {
 #[derive(Debug, Clone)]
 pub struct Block {
     pub stmts: ThinVec<Stmt>,
+    pub tail: Option<Box<Expr>>,
     pub span: Span,
 }
 

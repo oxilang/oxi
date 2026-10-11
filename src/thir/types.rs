@@ -205,7 +205,7 @@ pub struct Stmt {
 
 #[derive(Debug, Clone)]
 pub enum StmtKind {
-    Semi {
+    Expr {
         expr: ExprId,
     },
     Let {
@@ -222,7 +222,7 @@ pub enum StmtKind {
 pub struct Block {
     pub region_scope: Scope,
     pub stmts: ThinVec<StmtId>,
-    pub expr: Option<ExprId>,
+    pub tail: Option<ExprId>,
 }
 
 #[derive(Debug, Clone)]

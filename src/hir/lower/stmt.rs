@@ -27,7 +27,6 @@ impl<'a, 'ctx> AstLoweringContext<'a, 'ctx> {
                 }
             }
             ast::StmtKind::Expr(expr) => StmtKind::Expr(self.lower_expr(expr)),
-            ast::StmtKind::Semi(expr) => StmtKind::Semi(self.lower_expr(expr)),
         };
 
         Stmt {

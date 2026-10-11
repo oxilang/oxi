@@ -51,7 +51,6 @@ impl NodeCounts {
         let kind_name = match &stmt.kind {
             StmtKind::Expr(_) => "ExprStmt",
             StmtKind::Let { .. } => "LetStmt",
-            StmtKind::Semi(_) => "SemiStmt",
         };
         *self.stmt_counts.entry(kind_name).or_insert(0) += 1;
     }
@@ -263,6 +262,7 @@ fn dummy_expr_block(body: ThinVec<Stmt>) -> Expr {
     Expr {
         kind: ExprKind::Block(Block {
             stmts: body,
+            tail: None,
             span: dummy_span(),
         }),
         span: dummy_span(),
@@ -281,6 +281,7 @@ fn dummy_stmt_expr(expr: Expr) -> Stmt {
 fn dummy_fn_body() -> Option<Block> {
     Some(Block {
         stmts: ThinVec::new(),
+        tail: None,
         span: dummy_span(),
     })
 }
@@ -877,6 +878,7 @@ fn test_fn_decl_item() {
                 ],
                 body: Some(Block {
                     stmts: thin_vec![dummy_stmt_expr(dummy_expr_number(1))],
+                    tail: None,
                     span: dummy_span(),
                 }),
                 return_type: dummy_type_symbol("void"),
@@ -1154,6 +1156,7 @@ fn test_comprehensive_all_item_and_statement_types() {
                             parameters: ThinVec::new(),
                             body: Some(Block {
                                 stmts: thin_vec![dummy_stmt_expr(dummy_expr_number(1))],
+                                tail: None,
                                 span: dummy_span(),
                             }),
                             return_type: dummy_type_never(),
@@ -1213,7 +1216,7 @@ fn test_comprehensive_all_item_and_statement_types() {
                                 kind: StmtKind::Expr(Expr {
                                     kind: ExprKind::Block(Block {
                                         stmts: thin_vec![Stmt {
-                                            kind: StmtKind::Semi(Expr {
+                                            kind: StmtKind::Expr(Expr {
                                                 kind: ExprKind::Return(Some(Box::new(
                                                     dummy_expr_number(2)
                                                 ))),
@@ -1223,6 +1226,7 @@ fn test_comprehensive_all_item_and_statement_types() {
                                             span: dummy_span(),
                                             node_id: NodeId::default(),
                                         }],
+                                        tail: None,
                                         span: dummy_span(),
                                     }),
                                     span: dummy_span(),
@@ -1232,6 +1236,7 @@ fn test_comprehensive_all_item_and_statement_types() {
                                 node_id: NodeId::default(),
                             },
                         ],
+                        tail: None,
                         span: dummy_span(),
                     }),
                     return_type: dummy_type_symbol("isize"),
@@ -1256,7 +1261,7 @@ fn test_comprehensive_all_item_and_statement_types() {
         ("stmt", "LetStmt", 1),
         ("expr", "BlockExpr", 1),
         ("expr", "ReturnExpr", 1),
-        ("stmt", "SemiStmt", 1),
+        ("stmt", "ExprStmt", 3),
     ]);
 }
 
@@ -1405,6 +1410,7 @@ fn test_module_item() {
                         parameters: ThinVec::new(),
                         body: Some(Block {
                             stmts: thin_vec![dummy_stmt_expr(dummy_expr_number(1))],
+                            tail: None,
                             span: dummy_span(),
                         }),
                         return_type: dummy_type_infer(),
@@ -1596,7 +1602,7 @@ fn test_mutable_visitor_regression() {
                                 kind: StmtKind::Expr(Expr {
                                     kind: ExprKind::Block(Block {
                                         stmts: thin_vec![Stmt {
-                                            kind: StmtKind::Semi(Expr {
+                                            kind: StmtKind::Expr(Expr {
                                                 kind: ExprKind::Return(Some(Box::new(
                                                     dummy_expr_number(2)
                                                 ))),
@@ -1606,6 +1612,7 @@ fn test_mutable_visitor_regression() {
                                             span: dummy_span(),
                                             node_id: NodeId::default(),
                                         }],
+                                        tail: None,
                                         span: dummy_span(),
                                     }),
                                     span: dummy_span(),
@@ -1615,6 +1622,7 @@ fn test_mutable_visitor_regression() {
                                 node_id: NodeId::default(),
                             },
                         ],
+                        tail: None,
                         span: dummy_span(),
                     }),
                     return_type: dummy_type_symbol("void"),
@@ -1637,8 +1645,7 @@ fn test_mutable_visitor_regression() {
         ("item", "FnDeclItem", 1),
         ("stmt", "Stmt", 3),
         ("stmt", "LetStmt", 1),
-        ("stmt", "ExprStmt", 1),
-        ("stmt", "SemiStmt", 1),
+        ("stmt", "ExprStmt", 2),
         ("expr", "Expr", 5),
         ("expr", "NumberExpr", 3),
         ("expr", "BlockExpr", 1),

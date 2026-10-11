@@ -426,10 +426,10 @@ pub fn parse_parenthesis_expr(parser: &mut Parser) -> Result<Expr> {
 pub fn parse_block_expr(parser: &mut Parser) -> Result<Expr> {
     let start_span = parser.expect(TokenKind::OpenCurly)?.span;
 
-    let (body, span) = parse_body(parser, start_span)?;
+    let (stmts, tail, span) = parse_body(parser, start_span)?;
 
     Ok(Expr {
-        kind: ExprKind::Block(Block { stmts: body, span }),
+        kind: ExprKind::Block(Block { stmts, tail, span }),
         node_id: NodeId::default(),
         span,
     })
@@ -441,7 +441,7 @@ pub fn parse_if_expr(parser: &mut Parser) -> Result<Expr> {
     let condition = Box::new(parse_expr(parser, BindingPower::Call)?);
 
     parser.expect(TokenKind::OpenCurly)?;
-    let (stmts, body_span) = parse_body(parser, start_span)?;
+    let (stmts, tail, body_span) = parse_body(parser, start_span)?;
 
     let mut else_branch: Option<Box<Expr>> = None;
     if parser.current_token().kind == TokenKind::Else {
@@ -460,6 +460,7 @@ pub fn parse_if_expr(parser: &mut Parser) -> Result<Expr> {
             condition,
             then_branch: Block {
                 stmts,
+                tail,
                 span: body_span,
             },
             else_branch,
@@ -473,11 +474,11 @@ pub fn parse_while_expr(parser: &mut Parser) -> Result<Expr> {
     let start_span = parser.expect(TokenKind::While)?.span;
     let condition = Box::new(parse_expr(parser, BindingPower::Call)?);
     parser.expect(TokenKind::OpenCurly)?;
-    let (stmts, span) = parse_body(parser, start_span)?;
+    let (stmts, tail, span) = parse_body(parser, start_span)?;
     Ok(Expr {
         kind: ExprKind::While {
             condition,
-            body: Block { stmts, span },
+            body: Block { stmts, tail, span },
         },
         node_id: NodeId::default(),
         span,
@@ -487,9 +488,9 @@ pub fn parse_while_expr(parser: &mut Parser) -> Result<Expr> {
 pub fn parse_loop_expr(parser: &mut Parser) -> Result<Expr> {
     let start_span = parser.expect(TokenKind::Loop)?.span;
     parser.expect(TokenKind::OpenCurly)?;
-    let (stmts, span) = parse_body(parser, start_span)?;
+    let (stmts, tail, span) = parse_body(parser, start_span)?;
     Ok(Expr {
-        kind: ExprKind::Loop(Block { stmts, span }),
+        kind: ExprKind::Loop(Block { stmts, tail, span }),
         node_id: NodeId::default(),
         span,
     })

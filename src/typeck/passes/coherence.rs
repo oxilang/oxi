@@ -35,6 +35,7 @@ impl<'ctx, 'hir, 'res> Typeck<'ctx, 'hir, 'res> {
             };
 
             let impl_module = self
+                .resolver
                 .def_to_module
                 .get(&def_id)
                 .copied()

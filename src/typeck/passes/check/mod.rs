@@ -75,7 +75,11 @@ impl<'ctx, 'hir, 'res> Typeck<'ctx, 'hir, 'res> {
                 continue;
             };
 
-            let module_id = self.def_to_module.get(&def_id).expect("contains def id");
+            let module_id = self
+                .resolver
+                .def_to_module
+                .get(&def_id)
+                .expect("contains def id");
             checker.module_id = *module_id;
 
             match &info.nodes.nodes[0].node {

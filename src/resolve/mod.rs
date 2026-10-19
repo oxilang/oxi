@@ -177,6 +177,8 @@ pub struct ResolverOutputs {
     pub res_map: NodeMap<PartialRes>,
     /// maps (def node id) -> (def id)
     pub def_map: NodeMap<DefId>,
+    /// maps (def id -> (module id)
+    pub def_to_module: FxHashMap<DefId, ModuleId>,
     /// Arena\[DefId] -> Def
     pub defs: ThinVec<Def>,
     pub modules: PerModule<ModuleData>,
@@ -194,6 +196,7 @@ pub struct Resolver<'a, 'ctx> {
     pending_imports: ThinVec<PendingImport>,
     modules: PerModule<ModuleData>,
     def_map: NodeMap<DefId>,
+    def_to_module: FxHashMap<DefId, ModuleId>,
     /// Arena\[DefId] -> Def
     defs: ThinVec<Def>,
 
@@ -223,6 +226,7 @@ impl<'a, 'ctx> Resolver<'a, 'ctx> {
             pending_imports: ThinVec::new(),
             modules,
             def_map: NodeMap::default(),
+            def_to_module: FxHashMap::default(),
             defs: ThinVec::new(),
             res_map: NodeMap::default(),
         }
@@ -239,6 +243,7 @@ impl<'a, 'ctx> Resolver<'a, 'ctx> {
         ResolverOutputs {
             res_map: self.res_map,
             def_map: self.def_map,
+            def_to_module: self.def_to_module,
             defs: self.defs,
             modules: self.modules,
         }

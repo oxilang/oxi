@@ -14,7 +14,7 @@ use thin_vec::ThinVec;
 
 use crate::ast::Mutability;
 use crate::context::Ctx;
-use crate::hir::{self, Crate, DefId, HirId, ModuleId};
+use crate::hir::{self, Crate, DefId, HirId};
 use crate::interner::Symbol;
 use crate::resolve::ResolverOutputs;
 use fxhash::FxHashMap;
@@ -53,8 +53,6 @@ struct Typeck<'ctx, 'hir, 'res> {
     trait_methods: FxHashMap<DefId, FxHashMap<Symbol, Vec<(DefId, DefId)>>>,
     /// maps (item def id) -> (scheme)
     item_schemes: FxHashMap<DefId, Scheme>,
-    /// maps (def id) -> (module id)
-    def_to_module: FxHashMap<DefId, ModuleId>,
     /// maps (expr hir id) -> (adjustments)
     adjustments: FxHashMap<HirId, Vec<Adjustment>>,
     /// maps (generic param hir id) -> (type variable id)
@@ -63,7 +61,6 @@ struct Typeck<'ctx, 'hir, 'res> {
 
 impl<'ctx, 'hir, 'res> Typeck<'ctx, 'hir, 'res> {
     fn new(ctx: &'ctx mut Ctx, krate: &'hir mut Crate, resolver: &'res ResolverOutputs) -> Self {
-        let def_to_module = build_def_to_module(resolver);
         Self {
             ctx,
             krate,
@@ -74,7 +71,6 @@ impl<'ctx, 'hir, 'res> Typeck<'ctx, 'hir, 'res> {
             inherent_methods: FxHashMap::default(),
             trait_methods: FxHashMap::default(),
             item_schemes: FxHashMap::default(),
-            def_to_module,
             adjustments: FxHashMap::default(),
             hir_id_to_ty_var: FxHashMap::default(),
         }
@@ -100,27 +96,6 @@ impl<'ctx, 'hir, 'res> Typeck<'ctx, 'hir, 'res> {
             hir_id_to_ty_var: self.hir_id_to_ty_var,
         }
     }
-}
-
-fn build_def_to_module(resolver: &ResolverOutputs) -> FxHashMap<DefId, ModuleId> {
-    let mut map: FxHashMap<DefId, ModuleId> = FxHashMap::default();
-    for (i, module) in resolver.modules.iter().enumerate() {
-        for res in module.resolutions.values() {
-            map.insert(res.best_binding().def_id, ModuleId(i as u32));
-        }
-        for methods in module.struct_methods.values() {
-            for binding in methods.values() {
-                map.insert(binding.def_id, ModuleId(i as u32));
-            }
-        }
-        for &impl_def_id in &module.impls {
-            map.insert(impl_def_id, ModuleId(i as u32));
-        }
-        for &method_def_id in &module.methods {
-            map.insert(method_def_id, ModuleId(i as u32));
-        }
-    }
-    map
 }
 
 #[derive(Debug)]

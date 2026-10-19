@@ -54,6 +54,8 @@ impl<'a, 'ctx> Resolver<'a, 'ctx> {
             span,
         });
         self.def_map.insert(id, def_id);
+        self.def_to_module
+            .insert(def_id, ModuleId(self.module_idx as u32));
         def_id
     }
 

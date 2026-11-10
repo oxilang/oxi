@@ -1,9 +1,9 @@
 // @expect-error unexpected_parameters
 
-pub fn main() () {
+pub fn main() -> () {
     let x = foo(1, 2);
 }
 
-fn foo(a: i32) i32 {
+fn foo(a: i32) -> i32 {
     return a;
 }

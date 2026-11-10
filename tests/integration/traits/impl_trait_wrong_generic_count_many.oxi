@@ -5,11 +5,11 @@ struct Foo {
 }
 
 trait MyTrait<T> {
-    fn do_something(self: &Self) ();
+    fn do_something(self: &Self) -> ();
 }
 
 impl MyTrait::<u32, bool> for Foo {
-    fn do_something(self: &Self) () {}
+    fn do_something(self: &Self) -> () {}
 }
 
-pub fn main() () {}
+pub fn main() -> () {}

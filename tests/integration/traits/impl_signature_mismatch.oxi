@@ -1,13 +1,13 @@
 // @expect-error signature_mismatch
 
 trait I {
-    fn f(self: &Self) i32;
+    fn f(self: &Self) -> i32;
 }
 
 struct S {}
 
 impl I for S {
-    fn f(self: &Self) () {}
+    fn f(self: &Self) -> () {}
 }
 
-pub fn main() () {}
+pub fn main() -> () {}

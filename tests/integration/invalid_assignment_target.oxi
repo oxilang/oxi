@@ -1,5 +1,5 @@
 // @expect-error invalid_assignment_target
 
-pub fn main() () {
+pub fn main() -> () {
     5 = 10;
 }

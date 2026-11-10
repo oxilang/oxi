@@ -1,7 +1,7 @@
-fn identity<T>(x: T) T {
+fn identity<T>(x: T) -> T {
     x
 }
 
-fn main() () {
+fn main() -> () {
     let x = identity(42);
 }

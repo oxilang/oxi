@@ -1,7 +1,7 @@
 trait I {
-    fn a(self: &Self) i32;
-    fn b(self: &Self) i32;
-    fn c(self: &Self) i32;
+    fn a(self: &Self) -> i32;
+    fn b(self: &Self) -> i32;
+    fn c(self: &Self) -> i32;
 }
 
 struct S {
@@ -11,20 +11,20 @@ struct S {
 }
 
 impl I for S {
-    fn a(self: &Self) i32 {
+    fn a(self: &Self) -> i32 {
         return self.x;
     }
 
-    fn b(self: &Self) i32 {
+    fn b(self: &Self) -> i32 {
         return self.y;
     }
 
-    fn c(self: &Self) i32 {
+    fn c(self: &Self) -> i32 {
         return self.z;
     }
 }
 
-pub fn main() i32 {
+pub fn main() -> i32 {
     let s = S { x: 10, y: 20, z: 30 };
     return s.a() + s.b() + s.c();
 }

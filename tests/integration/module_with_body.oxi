@@ -1,9 +1,9 @@
 mod math {
-    pub fn add(a: i32, b: i32) i32 {
+    pub fn add(a: i32, b: i32) -> i32 {
         return a + b;
     }
 }
 
-pub fn main() i32 {
+pub fn main() -> i32 {
     return math::add(3, 4);
 }

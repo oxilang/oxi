@@ -5,5 +5,5 @@ struct Foo {}
 trait MyTrait {}
 
 impl MyTrait for Foo::Bar {
-    fn bar() () {}
+    fn bar() -> () {}
 }

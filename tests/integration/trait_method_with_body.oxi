@@ -1,7 +1,7 @@
 // @expect-error trait_method_has_body
 
 trait I {
-    fn f() i32 { return 1; }
+    fn f() -> i32 { return 1; }
 }
 
-pub fn main() () {}
+pub fn main() -> () {}

@@ -1,22 +1,22 @@
 trait I {
-    fn f(self: &Self) i32;
-    fn g(self: &Self) i32;
+    fn f(self: &Self) -> i32;
+    fn g(self: &Self) -> i32;
 }
 
 struct X { a: i32, }
 struct Y { b: i32, }
 
 impl I for X {
-    fn f(self: &Self) i32 { return self.a; }
-    fn g(self: &Self) i32 { return self.a + 1; }
+    fn f(self: &Self) -> i32 { return self.a; }
+    fn g(self: &Self) -> i32 { return self.a + 1; }
 }
 
 impl I for Y {
-    fn f(self: &Self) i32 { return self.b; }
-    fn g(self: &Self) i32 { return self.b + 2; }
+    fn f(self: &Self) -> i32 { return self.b; }
+    fn g(self: &Self) -> i32 { return self.b + 2; }
 }
 
-pub fn main() i32 {
+pub fn main() -> i32 {
     let x = X { a: 10 };
     let y = Y { b: 20 };
     x.f() + y.g()

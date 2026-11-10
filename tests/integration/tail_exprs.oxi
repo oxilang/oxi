@@ -1,6 +1,6 @@
 // @expect-error tail_expr_not_at_tail
 
-pub fn main() i8 {
+pub fn main() -> i8 {
     let a = 10;
     a + 1
     return a;

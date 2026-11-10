@@ -1,5 +1,5 @@
 #!/usr/bin/env oxic
 
-pub fn main() i32 {
+pub fn main() -> i32 {
     return 42;
 }

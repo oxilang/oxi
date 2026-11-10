@@ -1,4 +1,4 @@
 // @expect-error duplicate_modifier
 
-pub pub fn foo() () {}
-pub fn main() () {}
+pub pub fn foo() -> () {}
+pub fn main() -> () {}

@@ -1,5 +1,5 @@
 trait I {
-    fn f(self: &Self) i32;
+    fn f(self: &Self) -> i32;
 }
 
 struct S {
@@ -7,12 +7,12 @@ struct S {
 }
 
 impl I for S {
-    fn f(self: &Self) i32 {
+    fn f(self: &Self) -> i32 {
         return self.v;
     }
 }
 
-pub fn main() i32 {
+pub fn main() -> i32 {
     let s = S { v: 10 };
     return s.f();
 }

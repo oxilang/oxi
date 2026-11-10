@@ -1,4 +1,4 @@
-pub fn main() i32 {
+pub fn main() -> i32 {
     let x = 42;
     let y: &i32 = &x;
     let z: i32 = y@;

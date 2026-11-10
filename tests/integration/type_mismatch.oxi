@@ -1,5 +1,5 @@
 // @expect-error type_mismatch
 
-pub fn main() () {
+pub fn main() -> () {
     let x: bool = 42;
 }

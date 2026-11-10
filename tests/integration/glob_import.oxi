@@ -3,7 +3,7 @@
 mod foo;
 import foo::*;
 
-pub fn main() () {
+pub fn main() -> () {
     bar();
     baz();
 }

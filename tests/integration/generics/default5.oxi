@@ -3,15 +3,15 @@ struct Pair<T = i64, U = T> {
     second: U,
 }
 
-fn get_first(p: Pair) i64 {
+fn get_first(p: Pair) -> i64 {
     p.first
 }
 
-fn get_second(p: Pair) i64 {
+fn get_second(p: Pair) -> i64 {
     p.second
 }
 
-pub fn main() () {
+pub fn main() -> () {
     let p = Pair { first: 12, second: 24 };
     let x = get_first(p);
     let y = get_second(Pair { first: 12, second: 24 });

@@ -1,6 +1,6 @@
 // @expect-error type_mismatch
 
-pub fn main() u8 {
+pub fn main() -> u8 {
     if true {
         loop {
             if false {

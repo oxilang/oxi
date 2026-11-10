@@ -1,5 +1,5 @@
 trait Maker {
-    fn new(v: i32) Self;
+    fn new(v: i32) -> Self;
 }
 
 struct S {
@@ -7,12 +7,12 @@ struct S {
 }
 
 impl Maker for S {
-    fn new(v: i32) Self {
+    fn new(v: i32) -> Self {
         return S { v };
     }
 }
 
-pub fn main() i32 {
+pub fn main() -> i32 {
     let s = S::new(10);
     return s.v;
 }

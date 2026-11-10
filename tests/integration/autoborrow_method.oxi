@@ -1,12 +1,12 @@
 struct Foo {
     val: i32,
 
-    pub fn get(self: &Self) i32 {
+    pub fn get(self: &Self) -> i32 {
         return self.val;
     }
 }
 
-pub fn main() i32 {
+pub fn main() -> i32 {
     let foo = Foo { val: 10 };
     return foo.get();
 }

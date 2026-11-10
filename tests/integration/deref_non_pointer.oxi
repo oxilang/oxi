@@ -1,6 +1,6 @@
 // @expect-error deref_non_pointer
 
-pub fn main() () {
+pub fn main() -> () {
     let x = 5;
     let y = x@;
 }

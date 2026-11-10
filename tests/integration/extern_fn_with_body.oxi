@@ -1,7 +1,7 @@
 // @expect-error extern_function_body
 
-extern fn foo() i32 {
+extern fn foo() -> i32 {
     return 1;
 }
 
-pub fn main() () {}
+pub fn main() -> () {}

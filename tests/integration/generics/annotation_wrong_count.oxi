@@ -5,6 +5,6 @@ struct Pair<A, B> {
     second: B,
 }
 
-fn main() () {
+fn main() -> () {
     let p: Pair::<i32, bool, ()> = Pair { first: 1, second: true };
 }

@@ -1,6 +1,6 @@
 // @expect-error type_with_no_fields
 
-pub fn main() () {
+pub fn main() -> () {
     let x = 5;
     x.foo;
 }

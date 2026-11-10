@@ -3,5 +3,5 @@
 trait MyTrait {}
 
 impl MyTrait for MyTrait {
-    fn foo() () {}
+    fn foo() -> () {}
 }

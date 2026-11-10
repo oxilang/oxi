@@ -1,2 +1,2 @@
-pub fn a() () {}
-pub fn b() () {}
+pub fn a() -> () {}
+pub fn b() -> () {}

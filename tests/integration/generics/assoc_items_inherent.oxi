@@ -1,14 +1,14 @@
 struct Foo<T> {
-    pub fn bar(baz: T) T {
+    pub fn bar(baz: T) -> T {
         baz
     }
 
-    pub fn qux(self: &Self, baz: T) T {
+    pub fn qux(self: &Self, baz: T) -> T {
         baz
     }
 }
 
-pub fn main() () {
+pub fn main() -> () {
     Foo::bar(21);
     let foo = Foo {};
     foo.qux(12);

@@ -1,10 +1,10 @@
 // @expect-error type_mismatch
 
-fn id(x: &i32, y: i32) i32 {
+fn id(x: &i32, y: i32) -> i32 {
     return y;
 }
 
-pub fn main() i32 {
+pub fn main() -> i32 {
     let x: i32 = 4;
     return id(x, 6);
 }

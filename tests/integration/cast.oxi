@@ -1,4 +1,4 @@
-pub fn main() f32 {
+pub fn main() -> f32 {
   let a: i32 = 10;
   a as f32
 }

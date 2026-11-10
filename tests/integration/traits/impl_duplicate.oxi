@@ -1,21 +1,21 @@
 // @expect-error conflicting_implementations
 
 trait I {
-    fn f(self: &Self) i32;
+    fn f(self: &Self) -> i32;
 }
 
 struct S {}
 
 impl I for S {
-    fn f(self: &Self) i32 {
+    fn f(self: &Self) -> i32 {
         return 10;
     }
 }
 
 impl I for S {
-    fn f(self: &Self) i32 {
+    fn f(self: &Self) -> i32 {
         return 20;
     }
 }
 
-pub fn main() i32 {}
+pub fn main() -> i32 {}

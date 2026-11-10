@@ -1,2 +1,2 @@
-pub fn bar() () {}
-pub fn baz() () {}
+pub fn bar() -> () {}
+pub fn baz() -> () {}

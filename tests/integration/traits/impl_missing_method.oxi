@@ -1,14 +1,14 @@
 // @expect-error missing_implementation
 
 trait I {
-    fn a(self: &Self) ();
-    fn b(self: &Self) ();
+    fn a(self: &Self) -> ();
+    fn b(self: &Self) -> ();
 }
 
 struct S {}
 
 impl I for S {
-    fn a(self: &Self) () {}
+    fn a(self: &Self) -> () {}
 }
 
-pub fn main() () {}
+pub fn main() -> () {}

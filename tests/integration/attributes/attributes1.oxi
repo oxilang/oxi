@@ -1,15 +1,15 @@
 #[test]
-pub fn main() usize {
+pub fn main() -> usize {
     return 42;
 }
 
 #[foo(bar, baz)]
-pub fn foo() isize {
+pub fn foo() -> isize {
     return 10;
 }
 
 #[test]
 #[foo]
-pub fn bar() i32 {
+pub fn bar() -> i32 {
     return 5;
 }

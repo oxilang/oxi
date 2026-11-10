@@ -5,28 +5,28 @@ struct Foo<T = i64> {
 }
 
 trait Add<T = Self> {
-    fn add(self: &Self, rhs: &T) T;
+    fn add(self: &Self, rhs: &T) -> T;
 }
 
 impl Add for Foo {
-    fn add(self: &Self, rhs: &Self) Self {
+    fn add(self: &Self, rhs: &Self) -> Self {
         Self { data: self.data + rhs.data }
     }
 }
 
 impl Add::<i64> for Foo {
-    fn add(self: &Self, rhs: &i64) i64 {
+    fn add(self: &Self, rhs: &i64) -> i64 {
         self.data + rhs@
     }
 }
 
 impl Add::<Foo> for Foo {
-    fn add(self: &Self, rhs: &Self) Self {
+    fn add(self: &Self, rhs: &Self) -> Self {
         Self { data: self.data + rhs.data }
     }
 }
 
-pub fn main() () {
+pub fn main() -> () {
     let foo = Foo { data: 12 };
     let bar = foo.add(&Foo { data: 1 });
     let baz = foo.add(&24);

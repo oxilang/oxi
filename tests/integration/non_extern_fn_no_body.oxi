@@ -1,5 +1,5 @@
 // @expect-error non_extern_function_body
 
-fn foo() i32;
+fn foo() -> i32;
 
-pub fn main() () {}
+pub fn main() -> () {}

@@ -1,5 +1,5 @@
 trait I {
-    fn foo(self: &Self, x: Container::<Self>) ();
+    fn foo(self: &Self, x: Container::<Self>) -> ();
 }
 
 struct Container<T> {
@@ -9,10 +9,10 @@ struct Container<T> {
 struct S {}
 
 impl I for S {
-    fn foo(self: &Self, x: Container::<Self>) () {}
+    fn foo(self: &Self, x: Container::<Self>) -> () {}
 }
 
-pub fn main() () {
+pub fn main() -> () {
     let s = S {};
     let c = Container { val: s };
     s.foo(c);

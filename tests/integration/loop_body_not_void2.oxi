@@ -1,6 +1,6 @@
 // @expect-error type_mismatch
 
-pub fn main() () {
+pub fn main() -> () {
     loop {
         if false {
             1 + 2

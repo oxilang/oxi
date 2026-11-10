@@ -1,4 +1,4 @@
-fn main8() i32 {
+fn main8() -> i32 {
     let aa🚀b = 10;
     let 🌟d = 20;
     return aa🚀b + 🌟d;
@@ -9,7 +9,7 @@ struct Δύο {
     β: i32,
 }
 
-fn main9() i32 {
+fn main9() -> i32 {
     let d = Δύο { α: 1, β: 2 };
     return d.α + d.β;
 }

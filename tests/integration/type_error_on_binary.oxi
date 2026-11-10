@@ -1,6 +1,6 @@
 // @expect-error non_numeric_operand
 
-pub fn main() () {
+pub fn main() -> () {
     loop {
         break 12;
     } + true

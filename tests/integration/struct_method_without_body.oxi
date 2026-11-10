@@ -2,7 +2,7 @@
 
 struct Foo {
     x: i32,
-    fn bar() i32;
+    fn bar() -> i32;
 }
 
-pub fn main() () {}
+pub fn main() -> () {}

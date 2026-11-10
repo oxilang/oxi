@@ -1,9 +1,9 @@
-fn main5() i32 {
+fn main5() -> i32 {
     let 😀 = 42;
     return 😀;
 }
 
-fn main6() i32 {
+fn main6() -> i32 {
     let 🚀 = 10;
     let 🌟 = 20;
     return 🚀 + 🌟;
@@ -13,7 +13,7 @@ struct 🚀 {
     ❤️: i32,
 }
 
-fn main7() i32 {
+fn main7() -> i32 {
     let 🤠 = 🚀 { ❤️: 12 };
     let 🌟 = 20;
     return 🤠.❤️ + 🌟;

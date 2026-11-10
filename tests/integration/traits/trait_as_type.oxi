@@ -1,13 +1,13 @@
 // @expect-error expected_type_found_trait
 
 trait I {
-    fn f(self: &I) ();
+    fn f(self: &I) -> ();
 }
 
 struct S {}
 
 impl I for S {
-    fn f(self: &I) () {}
+    fn f(self: &I) -> () {}
 }
 
-pub fn main() () {}
+pub fn main() -> () {}

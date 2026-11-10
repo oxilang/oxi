@@ -1,4 +1,4 @@
-pub fn main() () {
+pub fn main() -> () {
     let a = [1, 2, 3];
     let l = a.len;
     let p = a.ptr;

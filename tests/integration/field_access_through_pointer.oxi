@@ -2,7 +2,7 @@ struct Foo {
     val: i32,
 }
 
-pub fn main() i32 {
+pub fn main() -> i32 {
     let f = Foo { val: 42 };
     let p = &f;
     return p.val;

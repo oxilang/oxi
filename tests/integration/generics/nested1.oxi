@@ -7,7 +7,7 @@ struct Wrapper<T> {
     inner: T
 }
 
-fn main() void {
+fn main() () {
     let w: Wrapper::<Pair::<i32, bool> > = Wrapper {
         inner: Pair { first: 1, second: true }
     };

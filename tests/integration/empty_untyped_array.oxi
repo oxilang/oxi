@@ -1,5 +1,5 @@
 // @expect-error infer_empty_array
 
-pub fn main() void {
+pub fn main() () {
     let a = [];
 }

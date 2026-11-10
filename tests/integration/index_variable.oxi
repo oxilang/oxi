@@ -1,4 +1,4 @@
-pub fn main() void {
+pub fn main() () {
     let a = [1, 2, 3];
     let i: usize = 1;
     let x = a[i];

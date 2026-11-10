@@ -4,6 +4,6 @@ struct Triple<T = i64, U = f32, V = T> {
     c: V,
 }
 
-pub fn main() void {
+pub fn main() () {
     let t = Triple::<u32> { a: 1, b: 2.0, c: 3 };
 }

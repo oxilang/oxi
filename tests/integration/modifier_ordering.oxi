@@ -1,4 +1,4 @@
 // @expect-error modifier_must_appear_before
 
 extern pub fn foo() i32;
-pub fn main() void {}
+pub fn main() () {}

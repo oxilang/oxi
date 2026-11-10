@@ -6,7 +6,7 @@ fn get_val(f: Foo::<isize>) isize {
     f.val
 }
 
-pub fn main() void {
+pub fn main() () {
     let f = Foo { val: 42 };
     let x = get_val(f);
 }

@@ -419,7 +419,7 @@ impl Visitable for Expr {
     fn visit(&self, visitor: &mut impl Visitor) {
         match visitor.visit_expr(self) {
             VisitAction::Continue => match &self.kind {
-                ExprKind::Literal(l) => l.visit(visitor),
+                ExprKind::Literal(_) => {}
                 ExprKind::Block(b) => b.visit(visitor),
                 ExprKind::If {
                     condition,
@@ -516,7 +516,7 @@ impl Visitable for Expr {
     fn visit_mut(&mut self, visitor: &mut impl VisitorMut) {
         match visitor.visit_expr(self) {
             VisitAction::Continue => match &mut self.kind {
-                ExprKind::Literal(l) => l.visit_mut(visitor),
+                ExprKind::Literal(_) => {}
                 ExprKind::Block(b) => b.visit_mut(visitor),
                 ExprKind::If {
                     condition,
@@ -611,16 +611,6 @@ impl Visitable for Expr {
     }
 }
 
-impl Visitable for Literal {
-    fn visit(&self, _visitor: &mut impl Visitor) {
-        // Unit
-    }
-
-    fn visit_mut(&mut self, _visitor: &mut impl VisitorMut) {
-        // Unit
-    }
-}
-
 impl Visitable for Type {
     fn visit(&self, visitor: &mut impl Visitor) {
         match visitor.visit_type(self) {
@@ -642,12 +632,9 @@ impl Visitable for Type {
                 TypeKind::Tuple(elements) => {
                     elements.visit(visitor);
                 }
-                TypeKind::Infer => {
-                    // Leaf
-                }
-                TypeKind::Never => {
-                    // Leaf
-                }
+                TypeKind::Unit => {}
+                TypeKind::Infer => {}
+                TypeKind::Never => {}
             },
             VisitAction::SkipChildren => {}
         }
@@ -673,12 +660,9 @@ impl Visitable for Type {
                 TypeKind::Tuple(elements) => {
                     elements.visit_mut(visitor);
                 }
-                TypeKind::Infer => {
-                    // Leaf
-                }
-                TypeKind::Never => {
-                    // Leaf
-                }
+                TypeKind::Unit => {}
+                TypeKind::Infer => {}
+                TypeKind::Never => {}
             },
             VisitAction::SkipChildren => {}
         }

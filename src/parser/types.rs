@@ -213,9 +213,15 @@ fn parse_parenthesis_type(parser: &mut Parser) -> Result<Type> {
             span: Span::new(start_token.span.start(), end_span.end()),
             node_id: NodeId::default(),
         })
-    } else {
+    } else if !types.is_empty() {
         Ok(Type {
             kind: TypeKind::Tuple(types),
+            span: Span::new(start_token.span.start(), close_token.span.end()),
+            node_id: NodeId::default(),
+        })
+    } else {
+        Ok(Type {
+            kind: TypeKind::Unit,
             span: Span::new(start_token.span.start(), close_token.span.end()),
             node_id: NodeId::default(),
         })

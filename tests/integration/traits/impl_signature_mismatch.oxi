@@ -7,7 +7,7 @@ trait I {
 struct S {}
 
 impl I for S {
-    fn f(self: &Self) void {}
+    fn f(self: &Self) () {}
 }
 
-pub fn main() void {}
+pub fn main() () {}

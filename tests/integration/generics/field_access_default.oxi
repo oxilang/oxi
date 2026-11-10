@@ -7,7 +7,7 @@ fn get_second(p: Pair) i64 {
     p.second
 }
 
-pub fn main() void {
+pub fn main() () {
     let p = Pair { first: 12, second: 24 };
     let v = get_second(p);
 }

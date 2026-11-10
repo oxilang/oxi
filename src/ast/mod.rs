@@ -225,6 +225,7 @@ pub enum Literal {
     String(Symbol),
     Char(char),
     Bool(bool),
+    Unit,
 }
 
 #[derive(Debug, Clone)]
@@ -268,6 +269,7 @@ impl Type {
                     .collect::<Vec<_>>()
                     .join(", ")
             ),
+            TypeKind::Unit => "()".to_string(),
             TypeKind::Infer => "_".to_string(),
             TypeKind::Never => "!".to_string(),
         }
@@ -285,6 +287,7 @@ pub enum TypeKind {
         ret: Box<Type>,
     },
     Tuple(ThinVec<Type>),
+    Unit,
     Infer,
     Never,
 }

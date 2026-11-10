@@ -528,6 +528,7 @@ impl<'a, 'res, 'ctx> Visitor for LateResolutionVisitor<'a, 'res, 'ctx> {
             TypeKind::Tuple(elements) => {
                 elements.visit(self);
             }
+            TypeKind::Unit => {}
             TypeKind::Infer => {}
             TypeKind::Never => {}
         }

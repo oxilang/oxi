@@ -1,6 +1,6 @@
 // @expect-error call_non_function
 
-pub fn main() void {
+pub fn main() () {
     let x = 5;
     x();
 }

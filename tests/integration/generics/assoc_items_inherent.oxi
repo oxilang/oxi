@@ -8,7 +8,7 @@ struct Foo<T> {
     }
 }
 
-pub fn main() void {
+pub fn main() () {
     Foo::bar(21);
     let foo = Foo {};
     foo.qux(12);

@@ -3,7 +3,7 @@
 mod quux;
 import quux::{a, b};
 
-pub fn main() void {
+pub fn main() () {
     a();
     b();
 }

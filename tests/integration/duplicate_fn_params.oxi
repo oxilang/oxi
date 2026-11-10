@@ -4,4 +4,4 @@ pub fn foo(a: i32, a: bool) i32 {
     return a;
 }
 
-pub fn main() void {}
+pub fn main() () {}

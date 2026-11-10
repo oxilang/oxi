@@ -65,6 +65,7 @@ impl NodeCounts {
             TypeKind::FixedArray(..) => "FixedArrayType",
             TypeKind::Function { .. } => "FunctionType",
             TypeKind::Tuple(_) => "TupleType",
+            TypeKind::Unit => "Unit",
             TypeKind::Infer => "Infer",
             TypeKind::Never => "Never",
         };
@@ -164,6 +165,7 @@ impl Visitor for NodeCounterVisitor {
                     Literal::String(_) => "StringExpr",
                     Literal::Char(_) => "CharExpr",
                     Literal::Bool(_) => "BoolExpr",
+                    Literal::Unit => "UnitExpr",
                 }
             }
             ExprKind::Block(_) => "BlockExpr",
@@ -221,6 +223,14 @@ fn dummy_token(kind: TokenKind) -> Token {
 fn dummy_type_symbol(name: &str) -> Type {
     Type {
         kind: TypeKind::Symbol(Path::from_ident(dummy_ident(name))),
+        node_id: NodeId::default(),
+        span: dummy_span(),
+    }
+}
+
+fn dummy_type_unit() -> Type {
+    Type {
+        kind: TypeKind::Unit,
         node_id: NodeId::default(),
         span: dummy_span(),
     }
@@ -881,7 +891,7 @@ fn test_fn_decl_item() {
                     tail: None,
                     span: dummy_span(),
                 }),
-                return_type: dummy_type_symbol("void"),
+                return_type: dummy_type_unit(),
                 is_extern: false,
             }),
             span: dummy_span(),
@@ -899,7 +909,8 @@ fn test_fn_decl_item() {
     visitor.assert_visited("expr", "Expr", 1);
     visitor.assert_visited("expr", "NumberExpr", 1);
     visitor.assert_visited("type", "Type", 3);
-    visitor.assert_visited("type", "SymbolType", 3);
+    visitor.assert_visited("type", "SymbolType", 2);
+    visitor.assert_visited("type", "Unit", 1);
 }
 
 #[test]
@@ -1022,7 +1033,7 @@ fn test_function_type() {
     let ty = Type {
         kind: TypeKind::Function {
             params: thin_vec![dummy_type_symbol("i32"), dummy_type_symbol("bool")],
-            ret: Box::new(dummy_type_symbol("void")),
+            ret: Box::new(dummy_type_unit()),
         },
         node_id: NodeId::default(),
         span: dummy_span(),
@@ -1031,7 +1042,8 @@ fn test_function_type() {
     ty.visit(&mut visitor);
     visitor.assert_visited("type", "Type", 4);
     visitor.assert_visited("type", "FunctionType", 1);
-    visitor.assert_visited("type", "SymbolType", 3);
+    visitor.assert_visited("type", "SymbolType", 2);
+    visitor.assert_visited("type", "Unit", 1);
 }
 
 #[test]
@@ -1293,7 +1305,7 @@ fn test_comprehensive_all_type_types() {
                 kind: TypeKind::Tuple(thin_vec![
                     dummy_type_infer(),
                     dummy_type_never(),
-                    dummy_type_symbol("void"),
+                    dummy_type_unit(),
                 ]),
                 node_id: NodeId::default(),
                 span: dummy_span(),
@@ -1313,7 +1325,8 @@ fn test_comprehensive_all_type_types() {
         ("type", "SliceType", 1),
         ("type", "FixedArrayType", 1),
         ("type", "TupleType", 1),
-        ("type", "SymbolType", 4),
+        ("type", "SymbolType", 3),
+        ("type", "Unit", 1),
         ("type", "Infer", 1),
         ("type", "Never", 1),
     ]);
@@ -1377,7 +1390,7 @@ fn test_impl_item() {
                     name: dummy_ident("bar"),
                     parameters: ThinVec::new(),
                     body: dummy_fn_body(),
-                    return_type: dummy_type_symbol("void"),
+                    return_type: dummy_type_unit(),
                     is_extern: false,
                 }),
                 span: dummy_span(),
@@ -1394,7 +1407,7 @@ fn test_impl_item() {
     item.visit(&mut visitor);
     visitor.assert_visited("item", "Item", 1);
     visitor.assert_visited("item", "ImplItem", 1);
-    visitor.assert_visited("type", "SymbolType", 1);
+    visitor.assert_visited("type", "Unit", 1);
 }
 
 #[test]
@@ -1523,6 +1536,7 @@ impl VisitorMut for MutationVisitor {
                     Literal::String(_) => "StringExpr",
                     Literal::Char(_) => "CharExpr",
                     Literal::Bool(_) => "BoolExpr",
+                    Literal::Unit => "UnitExpr",
                 }
             }
             ExprKind::Block(_) => "BlockExpr",
@@ -1625,7 +1639,7 @@ fn test_mutable_visitor_regression() {
                         tail: None,
                         span: dummy_span(),
                     }),
-                    return_type: dummy_type_symbol("void"),
+                    return_type: dummy_type_unit(),
                     is_extern: false,
                 }),
                 span: dummy_span(),
@@ -1651,7 +1665,8 @@ fn test_mutable_visitor_regression() {
         ("expr", "BlockExpr", 1),
         ("expr", "ReturnExpr", 1),
         ("type", "Type", 4),
-        ("type", "SymbolType", 3),
+        ("type", "SymbolType", 2),
+        ("type", "Unit", 1),
         ("type", "Infer", 1),
     ]);
 

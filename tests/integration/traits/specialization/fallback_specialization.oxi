@@ -14,7 +14,7 @@ impl Add::<i64> for Foo {
     }
 }
 
-pub fn main() void {
+pub fn main() () {
     let foo = Foo { data: 12 };
     let r = foo.add(&true);
 }

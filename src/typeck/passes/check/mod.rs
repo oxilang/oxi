@@ -403,6 +403,7 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
             Literal::Bool(_) => Ty::Prim(PrimTy::Bool),
             Literal::Char(_) => Ty::Prim(PrimTy::Uint(UintTy::U8)),
             Literal::String(_) => Ty::Slice(Ty::Prim(PrimTy::Uint(UintTy::U8)).into_box()),
+            Literal::Unit => Ty::Prim(PrimTy::Unit),
         }
     }
 

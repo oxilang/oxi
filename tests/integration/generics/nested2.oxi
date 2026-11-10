@@ -6,7 +6,7 @@ fn identity<T>(x: T) T {
     x
 }
 
-pub fn main() void {
+pub fn main() () {
     let x = identity::<usize>(42);
     let y = identity(Foo { data: 42 });
     let z: Foo::<Foo::<usize> > = Foo { data: identity(Foo::<usize> { data: 42 }) };

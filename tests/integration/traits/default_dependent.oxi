@@ -12,7 +12,7 @@ impl Dependent for MyStruct {
     }
 }
 
-pub fn main() void {
+pub fn main() () {
     let s = MyStruct { data: 42 };
     let x = s.get();
 }

@@ -1,6 +1,6 @@
 // @expect-error unexpected_parameters
 
-pub fn main() void {
+pub fn main() () {
     let x = foo(1, 2);
 }
 

@@ -2,6 +2,6 @@ fn identity<T>(x: T) T {
     x
 }
 
-fn main() void {
+fn main() () {
     let x = identity::<i64>(1);
 }

@@ -3,6 +3,7 @@ macro_rules! declare_symbols {
     (@prefill super) => { "super" };
     (@prefill self) => { "self" };
     (@prefill Self) => { "Self" };
+    (@prefill unit) => { "()" };
     (@prefill $name:ident) => { stringify!($name) };
 
     (@step $idx:expr; crate, $($rest:tt),*) => {
@@ -49,7 +50,7 @@ declare_symbols! {
     i8, i16, i32, i64, i128, isize,
     u8, u16, u32, u64, u128, usize,
     f16, f32, f64, f128,
-    bool, void,
+    bool, unit,
     crate, super, self,
     Self,
 }

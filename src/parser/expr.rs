@@ -410,7 +410,13 @@ pub fn parse_parenthesis_expr(parser: &mut Parser) -> Result<Expr> {
     let close_token = parser.expect(TokenKind::CloseParen)?;
     let end_span = close_token.span;
 
-    if elements.len() == 1 && !has_comma {
+    if elements.is_empty() {
+        Ok(Expr {
+            kind: ExprKind::Literal(Literal::Unit),
+            node_id: NodeId::default(),
+            span: Span::new(start_token.span.start(), end_span.end()),
+        })
+    } else if elements.len() == 1 && !has_comma {
         let mut expr = elements.pop().expect("expressions isn't empty");
         expr.span = Span::new(start_token.span.start(), end_span.end());
         Ok(expr)

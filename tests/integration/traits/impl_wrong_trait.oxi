@@ -8,4 +8,4 @@ impl i32 for S {
     }
 }
 
-pub fn main() void {}
+pub fn main() () {}

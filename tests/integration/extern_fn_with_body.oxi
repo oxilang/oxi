@@ -4,4 +4,4 @@ extern fn foo() i32 {
     return 1;
 }
 
-pub fn main() void {}
+pub fn main() () {}

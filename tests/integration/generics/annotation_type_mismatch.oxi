@@ -4,6 +4,6 @@ struct Foo<T> {
     val: T,
 }
 
-fn main() void {
+fn main() () {
     let x: Foo::<i32> = Foo { val: true };
 }

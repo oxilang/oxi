@@ -10,4 +10,4 @@ impl I for i32 {
     }
 }
 
-pub fn main() void {}
+pub fn main() () {}

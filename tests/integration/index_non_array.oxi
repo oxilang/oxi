@@ -1,6 +1,6 @@
 // @expect-error cannot_index
 
-pub fn main() void {
+pub fn main() () {
     let x: i32 = 5;
     let y = x[0];
 }

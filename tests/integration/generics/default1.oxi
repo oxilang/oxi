@@ -2,6 +2,6 @@ struct Foo<T = i64> {
     data: T,
 }
 
-pub fn main() void {
+pub fn main() () {
     let foo = Foo { data: 12 };
 }

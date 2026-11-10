@@ -5,11 +5,11 @@ struct Foo {
 }
 
 trait MyTrait<T> {
-    fn do_something(self: &Self) void;
+    fn do_something(self: &Self) ();
 }
 
 impl MyTrait for Foo {
-    fn do_something(self: &Self) void {}
+    fn do_something(self: &Self) () {}
 }
 
-pub fn main() void {}
+pub fn main() () {}

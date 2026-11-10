@@ -3,6 +3,6 @@ struct Pair<T = i64, U = T> {
     second: U,
 }
 
-pub fn main() void {
+pub fn main() () {
     let p = Pair { first: 12, second: 24 };
 }

@@ -4,6 +4,7 @@ Lit -> 0 | 1 | -1 | ...
      | "a" | "ab" | ...
      | 'a' | 'b' | ...
      | true | false
+     | ()
 Path -> Id [::< [Ty],* >]? [::Id [::< [Ty],* >]?]*
 ITree -> Path [as Id]?
        | Path::{[ITree],+}
@@ -32,7 +33,7 @@ Expr -> Lit
       | Expr([Expr],*)
       | Expr.Id
       | Expr as Ty
-      | ([Exp]r,*)
+      | ([Expr],+)
       | { [Stmt]* [Expr]? }
       | (Expr)
       | break [Expr]?

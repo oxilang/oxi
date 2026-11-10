@@ -10,10 +10,8 @@ Oxic is a compiler for the Oxi programming language.
 ```rust
 import std::print;
 
-pub fn main() isize {
+pub fn main() -> () {
     print("Hello world\n");
-
-    return 0;
 }
 ```
 

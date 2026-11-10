@@ -287,7 +287,7 @@ impl<'a> ThirLowerer<'a> {
             .tail
             .as_ref()
             .map(|tail| self.lookup_ty(tail.hir_id))
-            .unwrap_or_else(|| Ty::Prim(PrimTy::Void));
+            .unwrap_or_else(|| Ty::Prim(PrimTy::Unit));
         self.alloc_expr(ExprKind::Block(block_id), ty, block.span, block.hir_id)
     }
 

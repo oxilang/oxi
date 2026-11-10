@@ -270,7 +270,7 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
                         .cloned()
                         .unwrap_or(Ty::Error)
                 } else {
-                    Ty::Prim(PrimTy::Void)
+                    Ty::Prim(PrimTy::Unit)
                 };
                 if let Err(err) = unify(self.icx, expected, &inner, span, self.module_id) {
                     self.report_type_error(err);
@@ -343,7 +343,7 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
                 }
                 let then_span = then_branch.span;
                 let then_ty = self.check_block(then_branch).tail;
-                let void_ty = Ty::Prim(PrimTy::Void);
+                let void_ty = Ty::Prim(PrimTy::Unit);
                 let else_ty = else_branch.as_ref().map(|expr| self.check_expr(expr));
                 match else_ty {
                     Some(else_ty) => {
@@ -377,7 +377,7 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
                 {
                     self.report_type_error(err);
                 }
-                Ty::Prim(PrimTy::Void)
+                Ty::Prim(PrimTy::Unit)
             }
             ExprKind::MemberAccess { base, member } => {
                 self.check_member_access(*member, base, expr_span, hir_id)
@@ -925,7 +925,7 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
                 }
             }
         }
-        let mut tail_ty = Ty::Prim(PrimTy::Void);
+        let mut tail_ty = Ty::Prim(PrimTy::Unit);
         if diverged {
             if let Some(tail) = &block.tail {
                 self.check_expr(tail);
@@ -970,7 +970,7 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
             ExprKind::Break(break_expr) => {
                 let break_value_ty = break_expr
                     .as_ref()
-                    .map_or(Ty::Prim(PrimTy::Void), |inner| self.check_expr(inner));
+                    .map_or(Ty::Prim(PrimTy::Unit), |inner| self.check_expr(inner));
 
                 if let Some(existing_break_ty) = break_ty
                     && let Err(err) = unify(
@@ -1007,7 +1007,7 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
     fn check_loop(&mut self, block: &Block) -> Ty {
         let block_ty_res = self.check_block(block);
 
-        let void_ty = Ty::Prim(PrimTy::Void);
+        let void_ty = Ty::Prim(PrimTy::Unit);
         if let Err(err) = unify(
             self.icx,
             &void_ty,

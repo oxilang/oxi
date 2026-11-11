@@ -1,0 +1,5 @@
+pub fn main() -> () {
+    let x: () = ();
+    let y = ();
+    return ();
+}

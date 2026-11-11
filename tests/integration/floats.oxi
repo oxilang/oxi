@@ -1,4 +1,4 @@
-pub fn main() f64 {
+pub fn main() -> f64 {
   let a = 10.0;
   let b = -5.0;
   a - b

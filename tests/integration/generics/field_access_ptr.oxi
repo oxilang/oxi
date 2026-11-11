@@ -2,11 +2,11 @@ struct Foo<T> {
     val: T,
 }
 
-fn get_val_ptr(f: &Foo::<isize>) isize {
+fn get_val_ptr(f: &Foo::<isize>) -> isize {
     f.val
 }
 
-pub fn main() void {
+pub fn main() -> () {
     let f = Foo { val: 42 };
     let x = get_val_ptr(&f);
 }

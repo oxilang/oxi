@@ -1,5 +1,5 @@
 // @expect-error type_mismatch
 
-pub fn main() i32 {
+pub fn main() -> i32 {
     return true;
 }

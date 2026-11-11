@@ -20,7 +20,7 @@ let a = [1, 2, 3];
 ## Functions
 
 ```text
-fn add(a: u32, b: u32) u32 {
+fn add(a: u32, b: u32) -> u32 {
     a + b
 }
 ```
@@ -32,11 +32,11 @@ struct Foo<T = i32> {
     data: T,
 }
 
-fn identity<T>(x: T) T {
+fn identity<T>(x: T) -> T {
     x
 }
 
-pub fn main() void {
+pub fn main() -> () {
     let x = identity::<usize>(42);
     let data = identity(Foo { data: 42 });
     let foo: Foo::<Foo::<usize> > = Foo::<Foo::<usize> > { data };
@@ -49,22 +49,22 @@ pub fn main() void {
 struct Foo {
     data: u32,
 
-    fn add_one(self: &mut Self) void {
+    fn add_one(self: &mut Self) -> () {
         self.data += 1;
     }
 }
 
 trait AddTwo {
-    fn add_two(self: &mut Self) void;
+    fn add_two(self: &mut Self) -> ();
 }
 
 impl AddTwo for Foo {
-    fn add_two(self: &mut Self) void {
+    fn add_two(self: &mut Self) -> () {
         self.data += 2;
     }
 }
 
-pub fn main() void {
+pub fn main() -> () {
     let mut foo = Foo { data: 42 };
     foo.add_one();
     foo.add_two();

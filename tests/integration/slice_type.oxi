@@ -1,4 +1,4 @@
-pub fn main() void {
+pub fn main() -> () {
     let a = [1, 2, 3];
     let b: [i32] = a;
 }

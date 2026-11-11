@@ -1,4 +1,4 @@
-pub fn main() i32 {
+pub fn main() -> i32 {
     {
         {
             {
@@ -8,7 +8,7 @@ pub fn main() i32 {
     }
 }
 
-pub fn foo() void {
+pub fn foo() -> () {
     {
         {
             {
@@ -18,7 +18,7 @@ pub fn foo() void {
     };
 }
 
-pub fn bar() u128 {
+pub fn bar() -> u128 {
     if true {
         {
             let y = {

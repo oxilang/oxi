@@ -7,7 +7,7 @@ use crate::diag_params;
 use crate::errors::builders;
 use crate::hir::index::{AstIndex, AstOwner};
 use crate::hir::owner::HirId;
-use crate::hir::{AstLoweringContext, Crate, DefId, DefKind};
+use crate::hir::{AstLoweringContext, Crate, DefId, DefKind, PrimTy};
 use crate::hir::{diag, types::*};
 use crate::resolve::{PartialRes, Res};
 
@@ -156,6 +156,7 @@ impl<'a, 'ctx> AstLoweringContext<'a, 'ctx> {
             ast::TypeKind::Tuple(elements) => {
                 TyKind::Tuple(elements.iter().map(|e| self.lower_type(e)).collect())
             }
+            ast::TypeKind::Unit => TyKind::PrimTy(PrimTy::Unit),
             ast::TypeKind::Infer => TyKind::Infer,
             ast::TypeKind::Never => TyKind::Never,
         };

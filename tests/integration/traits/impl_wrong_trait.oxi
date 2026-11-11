@@ -3,9 +3,9 @@
 struct S {}
 
 impl i32 for S {
-    fn f(self: &Self) i32 {
+    fn f(self: &Self) -> i32 {
         return 10;
     }
 }
 
-pub fn main() void {}
+pub fn main() -> () {}

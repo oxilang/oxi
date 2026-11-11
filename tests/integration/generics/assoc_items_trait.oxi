@@ -1,21 +1,21 @@
 struct Foo {}
 
 trait Bar<T> {
-    fn bar(baz: T) T;
-    fn qux(self: &Self, baz: T) T;
+    fn bar(baz: T) -> T;
+    fn qux(self: &Self, baz: T) -> T;
 }
 
 impl Bar::<i32> for Foo {
-    fn bar(baz: i32) i32 {
+    fn bar(baz: i32) -> i32 {
         baz
     }
 
-    fn qux(self: &Self, baz: i32) i32 {
+    fn qux(self: &Self, baz: i32) -> i32 {
         baz
     }
 }
 
-pub fn main() void {
+pub fn main() -> () {
     Foo::bar(21);
     let foo = Foo {};
     foo.qux(12);

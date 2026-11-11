@@ -1,5 +1,5 @@
 // @expect-error non_numeric_operand
 
-pub fn main() void {
+pub fn main() -> () {
     let x = 5 + true;
 }

@@ -1,5 +1,5 @@
 const X: i32 = 42;
 
-pub fn main() i32 {
+pub fn main() -> i32 {
     return X;
 }

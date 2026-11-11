@@ -1,5 +1,5 @@
 trait Dependent<T = i64, U = T> {
-    fn get(self: &Self) T;
+    fn get(self: &Self) -> T;
 }
 
 struct MyStruct {
@@ -7,12 +7,12 @@ struct MyStruct {
 }
 
 impl Dependent for MyStruct {
-    fn get(self: &Self) i64 {
+    fn get(self: &Self) -> i64 {
         self.data
     }
 }
 
-pub fn main() void {
+pub fn main() -> () {
     let s = MyStruct { data: 42 };
     let x = s.get();
 }

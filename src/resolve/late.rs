@@ -47,9 +47,9 @@ enum RibKind {
     Normal,
     /// We have entered an item definition. Block upvars.
     /// ```ignore
-    /// fn main() void {
+    /// fn main() -> () {
     ///     let a = 0;
-    ///     fn b() void {
+    ///     fn b() -> () {
     ///         do_stuff(a); // Block usage of `a` here
     ///     }
     /// }
@@ -528,6 +528,7 @@ impl<'a, 'res, 'ctx> Visitor for LateResolutionVisitor<'a, 'res, 'ctx> {
             TypeKind::Tuple(elements) => {
                 elements.visit(self);
             }
+            TypeKind::Unit => {}
             TypeKind::Infer => {}
             TypeKind::Never => {}
         }

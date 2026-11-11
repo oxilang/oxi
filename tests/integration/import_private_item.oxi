@@ -4,4 +4,4 @@
 mod bar;
 import bar::baz;
 
-pub fn main() void {}
+pub fn main() -> () {}

@@ -1,9 +1,9 @@
 // @expect-error unexpected_generic_args
 
-fn identity<T>(x: T) T {
+fn identity<T>(x: T) -> T {
     x
 }
 
-fn main() void {
+fn main() -> () {
     let x = identity::<i32, bool>(42);
 }

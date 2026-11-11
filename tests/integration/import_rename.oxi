@@ -3,6 +3,6 @@
 mod baz;
 import baz::qux as z;
 
-pub fn main() void {
+pub fn main() -> () {
     z();
 }

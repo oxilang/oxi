@@ -1,6 +1,6 @@
 // @expect-error type_mismatch
 
-pub fn main() void {
+pub fn main() -> () {
     if true {
         1
     }

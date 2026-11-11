@@ -2,4 +2,4 @@
 
 import nonexistent::Foo;
 
-pub fn main() void {}
+pub fn main() -> () {}

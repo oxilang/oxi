@@ -2,4 +2,4 @@
 
 const X: bool = 42;
 
-pub fn main() void {}
+pub fn main() -> () {}

@@ -1,4 +1,4 @@
-fn foo(x: bool, y: i32) i32 {
+fn foo(x: bool, y: i32) -> i32 {
     if x {
         12 + y
     } else {
@@ -6,16 +6,16 @@ fn foo(x: bool, y: i32) i32 {
     }
 }
 
-pub fn main() bool {
+pub fn main() -> bool {
     let x = 1 < 2 && true |> not;
     x
 }
 
-fn not(x: bool) bool {
+fn not(x: bool) -> bool {
     !x
 }
 
-pub fn main2() i32 {
+pub fn main2() -> i32 {
     let x = 1 < 2 && true |> not;
     let y = false || x |> foo(10);
     y

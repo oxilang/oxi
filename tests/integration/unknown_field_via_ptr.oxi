@@ -4,6 +4,6 @@ struct Foo {
     x: i32,
 }
 
-pub fn f(p: &Foo) i32 {
+pub fn f(p: &Foo) -> i32 {
     return p.y;
 }

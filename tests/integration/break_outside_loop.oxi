@@ -1,5 +1,5 @@
 // @expect-error break_outside_loop
 
-pub fn main() void {
+pub fn main() -> () {
     break;
 }

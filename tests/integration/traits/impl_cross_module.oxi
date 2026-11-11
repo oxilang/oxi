@@ -1,7 +1,7 @@
 mod traits {
     pub trait I {
-        fn f(self: &Self) i32;
-        fn new(v: i32) Self;
+        fn f(self: &Self) -> i32;
+        fn new(v: i32) -> Self;
     }
 }
 
@@ -15,16 +15,16 @@ import traits::I;
 import structs::S;
 
 impl I for S {
-    fn f(self: &Self) i32 {
+    fn f(self: &Self) -> i32 {
         return self.v;
     }
 
-    fn new(v: i32) Self {
+    fn new(v: i32) -> Self {
         return S { v };
     }
 }
 
-pub fn main() i32 {
+pub fn main() -> i32 {
     let s = S::new(10);
     return s.f();
 }

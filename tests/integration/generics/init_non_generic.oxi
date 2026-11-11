@@ -5,6 +5,6 @@ struct Point {
     y: u32,
 }
 
-fn main() void {
+fn main() -> () {
     let p = Point::<u32> { x: 1, y: 2 };
 }

@@ -3,5 +3,5 @@
 struct Foo {}
 
 impl Foo::Bar for Foo {
-    fn foo() void {}
+    fn foo() -> () {}
 }

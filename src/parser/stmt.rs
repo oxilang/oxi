@@ -329,8 +329,7 @@ pub fn parse_fn_decl_item(
     }
 
     parser.expect(TokenKind::CloseParen)?;
-
-    // TODO: Maybe check if a '->' token is here and emit a helpful error message?
+    parser.expect(TokenKind::Arrow)?;
 
     let return_type = parse_type(parser, BindingPower::DefaultBp)?;
 

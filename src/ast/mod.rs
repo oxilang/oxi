@@ -119,7 +119,7 @@ pub struct Fn {
     pub parameters: ThinVec<(Ident, Type, NodeId)>,
     pub generic_params: Option<GenericParams>,
     pub body: Option<Block>,
-    pub return_type: Type,
+    pub return_type: Option<Type>,
     pub is_extern: bool,
 }
 

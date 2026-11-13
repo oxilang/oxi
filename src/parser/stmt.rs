@@ -329,9 +329,13 @@ pub fn parse_fn_decl_item(
     }
 
     parser.expect(TokenKind::CloseParen)?;
-    parser.expect(TokenKind::Arrow)?;
 
-    let return_type = parse_type(parser, BindingPower::DefaultBp)?;
+    let return_type = (parser.current_token().kind == TokenKind::Arrow)
+        .then(|| {
+            parser.advance();
+            parse_type(parser, BindingPower::DefaultBp)
+        })
+        .transpose()?;
 
     let end_span;
     let mut body: Option<Block> = None;

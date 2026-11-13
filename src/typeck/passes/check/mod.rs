@@ -243,8 +243,11 @@ impl<'a, 'b, 'ctx, 'res> BodyChecker<'a, 'b, 'ctx, 'res> {
             self.local_schemes.insert(param.hir_id, scheme.clone());
             self.env.insert(param.hir_id, scheme);
         }
-        let expected = Ty::from_hir(self.icx, &decl.ret);
-        self.node_types.insert(decl.ret.hir_id, expected.clone());
+        let expected = decl
+            .ret
+            .as_ref()
+            .map(|ty| Ty::from_hir(self.icx, ty))
+            .unwrap_or(Ty::Prim(PrimTy::Unit));
         self.check_expr(&body.value);
         self.check_return_values(&body.value, &expected, body.value.span);
         if let Some(body_ty) = self.node_types.get(&body.value.hir_id).cloned()

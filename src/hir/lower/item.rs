@@ -402,7 +402,7 @@ impl<'a, 'ctx> AstLoweringContext<'a, 'ctx> {
             });
         }
 
-        let ret = self.lower_type(&f.return_type);
+        let ret = f.return_type.as_ref().map(|ty| self.lower_type(ty));
 
         let mut bodies = FxHashMap::default();
         let body_id = f.body.as_ref().map(|block| {

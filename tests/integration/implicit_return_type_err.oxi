@@ -1,0 +1,5 @@
+// @expect-error type_mismatch
+
+fn test() {
+    23
+}

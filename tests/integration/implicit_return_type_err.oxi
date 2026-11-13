@@ -1,0 +1,3 @@
+// @expect-error type_mismatch
+
+fn test() -> i32 {}

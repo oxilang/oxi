@@ -181,7 +181,7 @@ pub struct StructField {
 #[derive(Debug, Clone)]
 pub struct FnDecl {
     pub params: ThinVec<Ty>,
-    pub ret: Ty,
+    pub ret: Option<Ty>,
 }
 
 #[derive(Debug, Clone)]

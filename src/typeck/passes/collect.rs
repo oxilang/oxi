@@ -2,7 +2,7 @@ use thin_vec::ThinVec;
 
 use super::check::emit_unify_error;
 use crate::hir::{
-    self, AssocItemKind, DefId, FnDecl, GenericParam, HirId, ItemKind, MaybeOwner, Node,
+    self, AssocItemKind, DefId, FnDecl, GenericParam, HirId, ItemKind, MaybeOwner, Node, PrimTy,
 };
 use crate::interner::Symbol;
 use crate::typeck::fold::fold_ty;
@@ -185,7 +185,12 @@ impl<'ctx, 'hir, 'res> Typeck<'ctx, 'hir, 'res> {
             .iter()
             .map(|param| Ty::from_hir(icx, param))
             .collect();
-        let ret = Ty::from_hir(icx, &decl.ret).into_box();
+        let ret = decl
+            .ret
+            .as_ref()
+            .map(|ty| Ty::from_hir(icx, ty))
+            .unwrap_or(Ty::Prim(PrimTy::Unit))
+            .into_box();
         Ty::Fn { params, ret }
     }
 
